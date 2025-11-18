@@ -28,9 +28,9 @@ def explain_for_gradio(
     # Combine both sections
     html_output = f"""
     <div style="font-family: monospace; width: 100%;">
-        <h3>Perbandingan Huruf</h3>
+        <h3>مقارنة الحروف</h3>
         {phoneme_html}
-        <h3>Perbandingan Sifat Huruf</h3>
+        <h3>مقارنة صفات الحروف</h3>
         {sifat_html}
        <div class="color-legend">
     </div>

@@ -89,51 +89,10 @@ current_moshaf = default_moshaf
 
 def get_field_name(field_name: str, field_info: FieldInfo) -> str:
     """Return the Arabic name of the field if applicable else the field_name"""
-    # Terjemahan nama field ke bahasa Indonesia
-    field_name_translations = {
-        "rewaya": "Qira'ah",
-        "takbeer": "Takbir",
-        "madd_monfasel_len": "Panjang Mad Munsal",
-        "madd_mottasel_len": "Panjang Mad Muttasil",
-        "madd_mottasel_waqf": "Panjang Mad Muttasil di Akhir Ayat",
-        "madd_aared_len": "Panjang Mad 'Arid",
-        "madd_alleen_len": "Panjang Mad Lin",
-        "ghonna_lam_and_raa": "Ghunnah Lam dan Ra'",
-        "meem_aal_imran": "Meem Al Imran",
-        "madd_yaa_alayn_alharfy": "Mad Ya' al-Alyni al-Harfiy",
-        "saken_before_hamz": "Sakt sebelum Hamzah",
-        "sakt_iwaja": "Sakt Iwaja",
-        "sakt_marqdena": "Sakt Marqdena",
-        "sakt_man_raq": "Sakt Man Raq",
-        "sakt_bal_ran": "Sakt Bal Ran",
-        "sakt_maleeyah": "Sakt Maleeyah",
-        "between_anfal_and_tawba": "Antara Anfal dan At-Taubah",
-        "noon_and_yaseen": "Nun dan Yasin",
-        "yaa_ataan": "Ya' At-an",
-        "start_with_ism": "Mulai dengan Basmalah",
-        "yabsut": "Yabsut",
-        "bastah": "Bastah",
-        "almusaytirun": "Al-Musaytirun",
-        "bimusaytir": "Bimusaytir",
-        "tasheel_or_madd": "Tashil atau Mad",
-        "yalhath_dhalik": "Yalhats Dhalik",
-        "irkab_maana": "Irkab Ma'ana",
-        "noon_tamnna": "Nun Tamnna",
-        "harakat_daaf": "Harakat Dha'if",
-        "alif_salasila": "Alif Salasila",
-        "idgham_nakhluqkum": "Idgham Nakhluqkum",
-        "raa_firq": "Raa' Firq",
-        "raa_alqitr": "Raa' Al-Qitr",
-        "raa_misr": "Raa' Mesir",
-        "raa_nudhur": "Raa' Nudzur",
-        "raa_yasr": "Raa' Yasr",
-        "meem_mokhfah": "Meem Makhfi",
-    }
-
-    label = field_name_translations.get(field_name, field_name)
+    label = field_name
     arabic_name = get_arabic_name(field_info)
     if arabic_name:
-        label = f"{arabic_name} ({label})"
+        label = f"{arabic_name} ({field_name})"
     return label
 
 
@@ -154,55 +113,6 @@ def create_gradio_input_for_field(
 
     if help is None:
         help = field_info.description
-
-    # Terjemahkan deskripsi jika tersedia
-    if help:
-        # Kamus terjemahan untuk deskripsi
-        help_translations = {
-            "The Rewaya to use for recitation.": "Qira'ah yang digunakan untuk bacaan.",
-            "The length of Mad Al Monfasel \"مد النفصل\" for Hafs Rewaya.": "Panjang Mad Al Monfasel \"مد النفصل\" untuk Qira'ah Hafs.",
-            "The length of Mad Al Mottasel \"مد المتصل\" for Hafs Rewaya.": "Panjang Mad Al Muttasil \"مد المتصل\" untuk Qira'ah Hafs.",
-            "The length of Mad Al Mottasel \"مد المتصل\" on Waqf for Hafs Rewaya.": "Panjang Mad Al Muttasil \"مد المتصل\" pada akhir ayat untuk Qira'ah Hafs.",
-            "The length of Mad Al Aared \"مد العارض\" for Hafs Rewaya.": "Panjang Mad Al Aared \"مد العارض\" untuk Qira'ah Hafs.",
-            "The length of Mad Alleen \"مد اللين\" for Hafs Rewaya.": "Panjang Mad Alleen \"مد اللين\" untuk Qira'ah Hafs.",
-            "Enable Ghonna on Lam and Raa when Sakien with 2 counts.": "Aktifkan Ghunnah pada Lam dan Ra' ketika Sukun selama 2 hitungan.",
-            "Enable Meem Al Imran with 2 counts.": "Aktifkan Meem Al Imran selama 2 hitungan.",
-            "Enable Mad Yaa Alayn Alharfy with 2 counts.": "Aktifkan Mad Yaa Alayn Alharfy selama 2 hitungan.",
-            "Enable Saken before Hamz with 1 or 2 counts.": "Aktifkan Sakt sebelum Hamzah selama 1 atau 2 hitungan.",
-            "Enable Sakt Iwaja with 1 or 2 counts.": "Aktifkan Sakt Iwaja selama 1 atau 2 hitungan.",
-            "Enable Sakt Marqdena with 1 or 2 counts.": "Aktifkan Sakt Marqdena selama 1 atau 2 hitungan.",
-            "Enable Sakt Man Raq with 1 or 2 counts.": "Aktifkan Sakt Man Raq selama 1 atau 2 hitungan.",
-            "Enable Sakt Bal Ran with 1 or 2 counts.": "Aktifkan Sakt Bal Ran selama 1 atau 2 hitungan.",
-            "Enable Sakt Maleeyah with 1 or 2 counts.": "Aktifkan Sakt Maleeyah selama 1 atau 2 hitungan.",
-            "Enable between Anfal and Tawba without Basmala.": "Aktifkan antara Anfal dan At-Taubah tanpa Basmalah.",
-            "Enable Noon and Yaseen.": "Aktifkan Nun dan Yasin.",
-            "Enable Yaa At-an.": "Aktifkan Ya' At-an.",
-            "Enable start with ism.": "Aktifkan awali dengan basmalah.",
-            "Enable Yabsut.": "Aktifkan Yabsut.",
-            "Enable Bastah.": "Aktifkan Bastah.",
-            "Enable Almusaytirun.": "Aktifkan Almusaytirun.",
-            "Enable Bimusaytir.": "Aktifkan Bimusaytir.",
-            "Enable Tasheel or Madd.": "Aktifkan Tashil atau Mad.",
-            "Enable Yalhath Dhalik.": "Aktifkan Yalhath Dhalik.",
-            "Enable Irkab Maana.": "Aktifkan Irkab Ma'ana.",
-            "Enable Noon Tamnna.": "Aktifkan Nun Tamnna.",
-            "Enable Harakat Daaf.": "Aktifkan Harakat Dha'if.",
-            "Enable Alif Salasila.": "Aktifkan Alif Salasila.",
-            "Enable Idgham Nakhluqkum.": "Aktifkan Idgham Nakhluqkum.",
-            "Enable Raa Firq.": "Aktifkan Raa' Firq.",
-            "Enable Raa Alqitr.": "Aktifkan Raa' Alqitr.",
-            "Enable Raa Misr.": "Aktifkan Raa' Mesir.",
-            "Enable Raa Nudhur.": "Aktifkan Raa' Nudzur.",
-            "Enable Raa Yasr.": "Aktifkan Raa' Yasr.",
-            "Enable Meem Mokhfah.": "Aktifkan Meem Makhfi.",
-            # Tambahkan terjemahan untuk deskripsi takbir
-            'The ways to add takbeer (الله أكبر) after Istiaatha (استعاذة) and between end of the surah and beginning of the surah. no_takbeer: "لا تكبير" — No Takbeer (No proclamation of greatness, i.e., there is no Takbeer recitation) beginning_of_sharh: "التكبير من أول الشرح لأول الناس" — Takbeer from the beginning of Surah Ash-Sharh to the beginning of Surah An-Nas end_of_dohaf: "التكبير من آخر الضحى لآخر الناس" — Takbeer from the end of Surah Ad-Duha to the end of Surah An-Nas general_takbeer: "التكبير أول كل سورة إلا التوبة" — Takbeer at the beginning of every Surah except Surah At-Tawbah': 'Cara menambahkan takbir (الله أكبر) setelah Istiaatha (استعاذة) dan antara akhir surah dan awal surah. no_takbeer: "لا تكبير" — Tanpa Takbir (Tanpa pengucapan kebesaran, yaitu tidak ada bacaan Takbir) beginning_of_sharh: "التكبير من أول الشرح لأول الناس" — Takbir dari awal Surah Ash-Sharh ke awal Surah An-Nas end_of_dohaf: "التكبير من آخر الضحى لآخر الناس" — Takbir dari akhir Surah Ad-Duha ke akhir Surah An-Nas general_takbeer: "التكبير أول كل سورة إلا التوبة" — Takbir di awal setiap Surah kecuali Surah At-Tawbah',
-        }
-
-        # Cari dan terapkan terjemahan yang cocok
-        translated_help = help_translations.get(help, help)  # Gunakan teks terjemahan jika ada, jika tidak tetap teks asli
-
-        help = translated_help
 
     # Handle Literal types
     if get_origin(field_info.annotation) is Literal:
@@ -323,9 +233,9 @@ def update_moshaf_settings(*args):
 
         # Create a new MoshafAttributes object with the updated values
         current_moshaf = MoshafAttributes(**settings_dict)
-        return "✅ Pengaturan berhasil disimpan - Settings saved successfully!"
+        return "✅ تم حفظ الإعدادات بنجاح - Settings saved successfully!"
     except Exception as e:
-        return f"❌ Kesalahan saat menyimpan pengaturan - Error saving settings: {str(e)}"
+        return f"❌ خطأ في حفظ الإعدادات - Error saving settings: {str(e)}"
 
 
 def reset_settings():
@@ -339,7 +249,7 @@ def reset_settings():
             getattr(default_moshaf, field_name) for field_name in field_names
         ]
         return default_values + [
-            "✅ Berhasil mengembalikan ke pengaturan awal - Reset to default settings successfully!"
+            "✅ تم إعادة التعيين إلى الإعدادات الافتراضية - Reset to default settings successfully!"
         ]
     except Exception as e:
         return [getattr(current_moshaf, field_name) for field_name in field_names] + [
@@ -348,20 +258,20 @@ def reset_settings():
 
 
 # Create the Gradio app
-with gr.Blocks(title="Pengajar Al-Quran") as app:
+with gr.Blocks(title="المعلم القرآني") as app:
     # Store current moshaf settings in session state
     current_moshaf_state = gr.State(default_moshaf)
 
     # Initialize field names list
     field_names = []
 
-    with gr.Tab("Analisis Utama - Main Analysis"):
-        gr.Markdown("# Deteksi Kesalahan Bacaan, Tajwid, dan Sifat Huruf")
-        gr.Markdown("Pilih bagian Al-Quran yang ingin Anda pelajari")
+    with gr.Tab("التحليل الرئيسي - Main Analysis"):
+        gr.Markdown("# كشف أخطاء التلاوة والتجويد وصفات الحروف")
+        gr.Markdown("اختر المقطع القرآني المراد تعلمه")
 
         with gr.Row():
             with gr.Column(scale=1):
-                gr.Markdown("### Perbandingan Bacaan")
+                gr.Markdown("### التلاة المقارنة")
 
                 # Create sura dropdown with both index and name
                 sura_choices = [
@@ -369,33 +279,33 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 ]
                 sura_dropdown = gr.Dropdown(
                     choices=sura_choices,
-                    label="Surah",
+                    label="السورة",
                     value=1,
                     elem_id="sura_dropdown",
                 )
 
                 aya_dropdown = gr.Dropdown(
                     choices=list(range(1, sura_to_aya_count[1] + 1)),
-                    label="Nomor Ayat",
+                    label="رقم الآية",
                     value=1,
                     elem_id="aya_dropdown",
                 )
                 start_idx = gr.Number(
                     value=0,
-                    label="Nomor kata dimulai dari nol (Word Index)",
+                    label="رقمة الكلمة بداية من صفر (Word Index)",
                     minimum=0,
                     step=1,
                     elem_id="start_idx",
                 )
                 num_words = gr.Number(
                     value=4,
-                    label="Jumlah kata",
+                    label="عدد الكلمات",
                     minimum=1,
                     step=1,
                     elem_id="num_words",
                 )
                 uthmani_text = gr.Textbox(
-                    label="Tulisan Utsmani",
+                    label="الرسم العثماني",
                     interactive=False,
                     elem_id="uthmani_text",
                 )
@@ -409,10 +319,10 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                     elem_id="audio_input",
                 )
                 analyze_btn = gr.Button(
-                    "Periksa Bacaan", variant="primary", elem_id="analyze_btn"
+                    "افحص التلاوة", variant="primary", elem_id="analyze_btn"
                 )
                 output_html = gr.HTML(
-                    label="Hasil pemeriksaan",
+                    label="نتيجة الفحص",
                     elem_id="output_html",
                 )
 
@@ -447,9 +357,9 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
             outputs=output_html,
         )
 
-    with gr.Tab("Pengaturan Mushaf - Moshaf Settings"):
-        gr.Markdown("# Pengaturan Sifat Mushaf")
-        gr.Markdown("Sesuaikan sifat mushaf sesuai dengan bacaan yang diinginkan")
+    with gr.Tab("إعدادات المصحف - Moshaf Settings"):
+        gr.Markdown("# إعدادات خصائص المصحف")
+        gr.Markdown("قم بتعديل خصائص المصحف حسب التلاوة المطلوبة")
 
         # Create settings inputs directly in the tab
         settings_components = []
@@ -466,8 +376,8 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
 
         # Save button and status message
         with gr.Row():
-            save_btn = gr.Button("Simpan Pengaturan - Save Settings", variant="primary")
-            reset_btn = gr.Button("Kembalikan ke Awal - Reset to Default")
+            save_btn = gr.Button("حفظ الإعدادات - Save Settings", variant="primary")
+            reset_btn = gr.Button("إعادة التعيين - Reset to Default")
 
         status_message = gr.Markdown()
 
@@ -483,7 +393,7 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
 
 
 def main(app=app):
-    app.launch(server_name="0.0.0.0", share=False)
+    app.launch(server_name="0.0.0.0", share=True)
 
 
 if __name__ == "__main__":
