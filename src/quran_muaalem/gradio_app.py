@@ -440,16 +440,16 @@ def update_uthmani_ref(sura_idx, aya_idx, start_idx, num_words):
         )
         return uthmani_ref
     except PartOfUthmaniWord as e:
-        return f"⚠️ Warning: You've selected part of a Uthmani word. Please adjust the number of words to include complete words only.\n\nError details: {str(e)}"
+        return f"⚠️ Peringatan: Anda telah memilih sebagian kata Utsmani. Silakan sesuaikan jumlah kata untuk hanya mencakup kata lengkap.\n\nDetail kesalahan: {str(e)}"
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Kesalahan: {str(e)}"
 
 
 def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
     global current_moshaf
 
     if audio is None:
-        return "Please upload an audio file first"
+        return "Silakan unggah file audio terlebih dahulu"
 
     try:
         # Get Uthmani reference text
@@ -489,9 +489,9 @@ def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
         return explanation_html
 
     except PartOfUthmaniWord as e:
-        return f"⚠️ Error: The selected word range includes partial Uthmani words. Please adjust the number of words to include complete words only.\n\nError details: {str(e)}"
+        return f"⚠️ Peringatan: Rentang kata yang dipilih mencakup kata Utsmani sebagian. Silakan sesuaikan jumlah kata untuk hanya mencakup kata lengkap.\n\nDetail kesalahan: {str(e)}"
     # except Exception as e:
-    #     return f"Error processing audio: {str(e)}"
+    #     return f"Kesalahan memproses audio: {str(e)}"
 
 
 def update_moshaf_settings(*args):
@@ -585,7 +585,7 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 gr.Markdown("### فحص التلاوة القرآنية")
                 audio_input = gr.Audio(
                     sources=["upload", "microphone"],
-                    label="Upload or Record Audio",
+                    label="Unggah atau Rekam Audio",
                     type="filepath",
                     elem_id="audio_input",
                 )
