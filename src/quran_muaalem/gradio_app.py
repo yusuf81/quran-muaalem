@@ -165,6 +165,7 @@ def create_gradio_input_for_field(
             "The length of Mad Al Mottasel \"مد المتصل\" on Waqf for Hafs Rewaya.": "Panjang Mad Al Muttasil \"مد المتصل\" pada akhir ayat untuk Qira'ah Hafs.",
             "The length of Mad Al Aared \"مد العارض\" for Hafs Rewaya.": "Panjang Mad Al Aared \"مد العارض\" untuk Qira'ah Hafs.",
             "The length of Mad Alleen \"مد اللين\" for Hafs Rewaya.": "Panjang Mad Alleen \"مد اللين\" untuk Qira'ah Hafs.",
+            "The ghonna for merging (Idghaam) noon with Lam and Raa for Hafs.": "Ghunnah untuk menggabung (Idgham) nun dengan Lam dan Ra untuk Hafs.",
             "Enable Ghonna on Lam and Raa when Sakien with 2 counts.": "Aktifkan Ghunnah pada Lam dan Ra' ketika Sukun selama 2 hitungan.",
             "Enable Meem Al Imran with 2 counts.": "Aktifkan Meem Al Imran selama 2 hitungan.",
             "Enable Mad Yaa Alayn Alharfy with 2 counts.": "Aktifkan Mad Yaa Alayn Alharfy selama 2 hitungan.",
