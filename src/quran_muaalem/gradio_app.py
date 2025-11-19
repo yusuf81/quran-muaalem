@@ -91,11 +91,11 @@ def get_field_name(field_name: str, field_info: FieldInfo) -> str:
     """Return the Arabic name of the field if applicable else the field_name"""
     # Terjemahan nama field ke bahasa Indonesia
     field_name_translations = {
-        "rewaya": "Qiraat",
+        "rewaya": "Qiraah",
         "takbeer": "Takbir",
         "madd_monfasel_len": "Panjang Mad Munfasil",
         "madd_mottasel_len": "Panjang Mad Muttashil",
-        "madd_mottasel_waqf": "Panjang Mad Muttashil di Akhir Ayat",
+        "madd_mottasel_waqf": "Panjang Mad Muttashil pada Waqaf",
         "madd_aared_len": "Panjang Mad 'Aridh",
         "madd_alleen_len": "Panjang Mad Lin",
         "ghonna_lam_and_raa": "Ghunnah Lam dan Ra",
@@ -159,15 +159,15 @@ def create_gradio_input_for_field(
     if help:
         # Kamus terjemahan untuk deskripsi
         help_translations = {
-            "The Rewaya to use for recitation.": "Qiraat yang digunakan untuk bacaan.",
-            "The length of Mad Al Monfasel \"مد النفصل\" for Hafs Rewaya.": "Panjang Mad Al Munfasil \"مد النفصل\" untuk Qiraat Hafs.",
-            "The length of Mad Al Mottasel \"مد المتصل\" for Hafs Rewaya.": "Panjang Mad Al Muttashil \"مد المتصل\" untuk Qiraat Hafs.",
+            "The Rewaya to use for recitation.": "Qiraah yang digunakan untuk bacaan.",
+            "The length of Mad Al Monfasel \"مد النفصل\" for Hafs Rewaya.": "Panjang Mad Al Munfasil \"مد النفصل\" untuk Qiraah Hafs.",
+            "The length of Mad Al Mottasel \"مد المتصل\" for Hafs Rewaya.": "Panjang Mad Al Muttashil \"مد المتصل\" untuk Qiraah Hafs.",
             "The length of Mad Al Mottasel \"مد المتصل\" on Waqf for Hafs Rewaya.": "Panjang Mad Al Muttashil \"مد المتصل\" pada akhir ayat untuk Qiraat Hafs.",
             "The length of Mad Al Aared \"مد العارض\" for Hafs Rewaya.": "Panjang Mad Al 'Aridh \"مد العارض\" untuk Qiraat Hafs.",
             "The length of Mad Alleen \"مد اللين\" for Hafs Rewaya.": "Panjang Mad Al-Leen \"مد اللين\" untuk Qiraat Hafs.",
             "The ghonna for merging (Idghaam) noon with Lam and Raa for Hafs.": "Ghunnah untuk idgham (peluluran) nun dengan Lam dan Ra untuk Hafs.",
-            "Enable Ghonna on Lam and Raa when Sakien with 2 counts.": "Aktifkan Ghunnah pada Lam dan Ra ketika sukun selama 2 hitungan.",
-            "Enable Meem Al Imran with 2 counts.": "Aktifkan Mim Al Imran selama 2 hitungan.",
+            "Enable Ghonna on Lam and Raa when Sakien with 2 counts.": "Aktifkan Ghunnah pada Lam dan Ra ketika sukun selama 2 ketukan.",
+            "Enable Meem Al Imran with 2 counts.": "Aktifkan Mim Al Imran selama 2 ketukan.",
             "Enable Mad Yaa Alayn Alharfy with 2 counts.": "Aktifkan Mad Ya Al-'Ain Al-Harfy selama 2 hitungan.",
             "Enable Saken before Hamz with 1 or 2 counts.": "Aktifkan sakt sebelum hamzah selama 1 atau 2 hitungan.",
             "Enable Sakt Iwaja with 1 or 2 counts.": "Aktifkan sakt Iwaja selama 1 atau 2 hitungan.",
@@ -199,10 +199,10 @@ def create_gradio_input_for_field(
             # Tambahkan terjemahan untuk deskripsi takbir
             'The ways to add takbeer (الله أكبر) after Istiaatha (استعاذة) and between end of the surah and beginning of the surah. no_takbeer: "لا تكبير" — No Takbeer (No proclamation of greatness, i.e., there is no Takbeer recitation) beginning_of_sharh: "التكبير من أول الشرح لأول الناس" — Takbeer from the beginning of Surah Ash-Sharh to the beginning of Surah An-Nas end_of_dohaf: "التكبير من آخر الضحى لآخر الناس" — Takbeer from the end of Surah Ad-Duha to the end of Surah An-Nas general_takbeer: "التكبير أول كل سورة إلا التوبة" — Takbeer at the beginning of every Surah except Surah At-Tawbah': 'Cara menambahkan takbir (الله أكبر) setelah Istiaatha (استعاذة) dan antara akhir surah dan awal surah. no_takbeer: "لا تكبير" — Tanpa Takbir (Tanpa pengucapan kebesaran, yaitu tidak ada bacaan Takbir) beginning_of_sharh: "التكبير من أول الشرح لأول الناس" — Takbir dari awal Surah Ash-Sharh ke awal Surah An-Nas end_of_dohaf: "التكبير من آخر الضحى لآخر الناس" — Takbir dari akhir Surah Ad-Duha ke akhir Surah An-Nas general_takbeer: "التكبير أول كل سورة إلا التوبة" — Takbir di awal setiap Surah kecuali Surah At-Tawbah',
             # Tambahkan entri terjemahan untuk deskripsi lainnya dari MoshafAttributes
-            ' The length of Mad Al Monfasel "مد النفصل" for Hafs Rewaya.': 'Panjang Mad Al Monfasel (مد النفصل) untuk qira\'ah Hafs.',
-            ' The length of Mad Al Motasel "مد المتصل" for Hafs.': 'Panjang Mad Al Muttasil (مد المتصل) untuk qira\'ah Hafs.',
+            ' The length of Mad Al Monfasel "مد النفصل" for Hafs Rewaya.': 'Panjang Mad Al Monfasel (مد النفصل) untuk qiraah Hafs.',
+            ' The length of Mad Al Motasel "مد المتصل" for Hafs.': 'Panjang Mad Al Muttasil (مد المتصل) untuk qiraah Hafs.',
             ' The length of Madd Almotasel at pause for Hafs. Example "السماء".': 'Panjang Mad Muttasil pada akhir ayat untuk qira\'ah Hafs. Contoh "السماء".',
-            ' The length of Mad Al Aared "مد العارض للسكون".': 'Panjang Mad Al Aared (مد العارض للسكون) untuk qira\'ah Hafs.',
+            ' The length of Mad Al Aared "مد العارض للسكون".': 'Panjang Mad Al Aared (مد العارض للسكون) untuk qiraah Hafs.',
             'The length of the Madd al-Leen when stopping at the end of a word (for a sakin waw or ya preceded by a letter with a fatha) should be less than or equal to the length of Madd al-\'Arid (the temporary stretch due to stopping). **Default Value is equal to `madd_aared_len`**. مقدرا مع اللين عن القوف (للواو الساكنة والياء الساكنة وقبلها حرف مفتوح) ويجب أن يكون مقدار مد اللين أقل من أو يساوي مع العارض': 'Panjang Mad Al-Leen saat berhenti di akhir kata (untuk wawu sukun atau ya\' yang didahului oleh huruf dengan fathah) seharusnya kurang dari atau sama dengan panjang Mad Al-Arid (pemanjangan sementara karena berhenti). **Nilai bawaan sama dengan `madd_aared_len`**. Nilai Mad Lin saat berhenti (untuk wawu sukun atau ya sukun dengan huruf fathah sebelumnya) dan nilai Mad Lin harus kurang dari atau sama dengan Mad Aared.',
             'The ghonna for merging (Idghaam) noon with Lam and Raa for Hafs.': 'Ghunnah untuk menggabung (Idgham) nun dengan Lam dan Ra untuk Hafs.',
             'The ways to recite the word meem Aal Imran (الم الله) at connected recitation. `waqf`: Pause with a prolonged madd (elongation) of 6 harakat (beats). `wasl_2` Pronounce "meem" with fathah (a short "a" sound) and stretch it for 2 harakat. `wasl_6` Pronounce "meem" with fathah and stretch it for 6 harakat.': 'Cara membaca kata meem Aal Imran (الم الله) pada bacaan bersambung. `waqf`: Berhenti dengan mad panjang (pemanjangan) selama 6 harakat (ketukan). `wasl_2` Ucapkan "meem" dengan fathah (suara pendek "a") dan ulurkan selama 2 harakat. `wasl_6` Ucapkan "meem" dengan fathah dan ulurkan selama 6 harakat.',
@@ -238,7 +238,7 @@ def create_gradio_input_for_field(
             'Emphasis and softening of the letter \'Ra\' in the word {يسر} in Surah Al-Fajr when pausing (waqf).This refers to the recitation rules regarding whether the letter "Ra" (ر) in the word "يسر" is pronounced with emphasis (`tafkheem`) or softening (`tarqeeq`) when pausing at this word in Surah Al-Fajr. `wasl`: means not pasuing so we only have one way (tarqeeq of Raa)': 'Penekanan dan pelunakan huruf \'Ra\' dalam kata {يسر} dalam Surah Al-Fajr saat berhenti (waqf). Ini mengacu pada aturan bacaan tentang apakah huruf "Ra" (ر) dalam kata "يسر" diucapkan dengan penekanan (`tafkheem`) atau pelunakan (`tarqeeq`) saat berhenti di kata ini dalam Surah Al-Fajr. `wasl`: artinya tidak berhenti jadi kita hanya punya satu cara (tarqeeq dari Ra)',
             'This is not a standrad Hafs way but a disagreement between schoolars in our century how to pronounc Ikhfaa for meem. Some schoolars do full merging `إدام` and the other open the leaps a little bit `إخفاء`. We did not want to add this but some of the best reciters disagree about this': 'Ini bukan cara standar Hafs tetapi perbedaan pendapat antara ulama di abad kita bagaimana mengucapkan Ikhfaa untuk meem. Beberapa ulama melakukan pelumeran penuh `إدام` dan yang lain membuka celah sedikit `إخفاء`. Kita tidak ingin menambahkan ini tetapi beberapa pembaca terbaik memiliki perbedaan pendapat tentang hal ini',
             # Tambahkan deskripsi dasar
-            "The type of the quran Rewaya.": "Jenis qira'ah Al-Quran.",
+            "The type of the quran Rewaya.": "Jenis qiraah Al-Quran.",
             # Tambahkan entri untuk deskripsi yang belum ditangani
             'Emphasis and softening of the letter \'Ra\' in the word {urfq} in Surah Ash-Shu\'ara\' when connected (wasl).This refers to the recitation rules concerning whether the letter "Ra" (ر) in the word "urfq"  is pronounced with emphasis (`tafkheem`) or softening (`tarqeeq`) when reciting the specific verse from Surah Ash-Shu\'ara\' in connected speech. `waqf`: means pasuing so we only have one way (tafkheem of Raa)': 'Penekanan dan pelunakan huruf \'Ra\' dalam kata {urfq} dalam Surah Ash-Shu\'ara\' saat bersambung (wasl). Ini mengacu pada aturan bacaan tentang apakah huruf "Ra" (ر) dalam kata "urfq" diucapkan dengan penekanan (`tafkheem`) atau pelunakan (`tarqeeq`) saat membaca ayat spesifik dari Surah Ash-Shu\'ara\' secara bacaan bersambung. `waqf`: artinya berhenti jadi kita hanya punya satu cara (tafkheem dari Ra)',
             # Tambahkan entri untuk deskripsi yang sesuai dengan teks HTML yang ditampilkan
@@ -260,7 +260,7 @@ def create_gradio_input_for_field(
             'The ways to add takbeer (الله أكبر) after Istiaatha (استعاذة) and between end of the surah and beginning of the surah. `no_takbeer`: "لا تكبير" — No Takbeer (No proclamation of greatness, i.e., there is no Takbeer recitation) `beginning_of_sharh`: "التكبير من أول الشرح لأول الناس" — Takbeer from the beginning of Surah Ash-Sharh to the beginning of Surah An-Nas `end_of_dohaf`: "التكبير من آخر الضحى لآخر الناس" — Takbeer from the end of Surah Ad-Duha to the end of Surah An-Nas `general_takbeer`: "التكبير أول كل سورة إلا التوبة" — Takbeer at the beginning of every Surah except Surah At-Tawbah': 'Cara menambahkan takbir (الله أكبر) setelah Istiaatha (استعاذة) dan antara akhir surah dan awal surah. `no_takbeer`: "لا تكبير" — Tanpa Takbir (Tanpa pengucapan kebesaran, yaitu tidak ada bacaan Takbir) `beginning_of_sharh`: "التكبير من أول الشرح لأول الناس" — Takbir dari awal Surah Ash-Sharh ke awal Surah An-Nas `end_of_dohaf`: "التكبير من آخر الضحى لآخر الناس" — Takbir dari akhir Surah Ad-Duha ke akhir Surah An-Nas `general_takbeer`: "التكبير أول كل سورة إلا التوبة" — Takbir di awal setiap Surah kecuali Surah At-Tawbah',
             ' The length of Mad Al Monfasel "مد النفصل" for Hafs Rewaya.': 'Panjang Mad Al Monfasel (مد النفصل) untuk qira\'ah Hafs.',
             ' The length of Mad Al Motasel "مد المتصل" for Hafs.': 'Panjang Mad Al Muttasil (مد المتصل) untuk qira\'ah Hafs.',
-            " The length of Madd Almotasel at pause for Hafs.. Example \"السماء\".": "Panjang Mad Muttasil pada akhir ayat untuk qira'ah Hafs. Contoh \"السماء\".",
+            " The length of Madd Almotasel at pause for Hafs.. Example \"السماء\".": "Panjang Mad Muttasil pada akhir ayat untuk qiraah Hafs. Contoh \"السماء\".",
             ' The length of Mad Al Aared "مد العارض للسكون".': 'Panjang Mad Al Aared (مد العارض للسكون) untuk qira\'ah Hafs.',
             "The length of the Madd al-Leen when stopping at the end of a word (for a sakin waw or ya preceded by a letter with a fatha) should be less than or equal to the length of Madd al-'Arid (the temporary stretch due to stopping). **Default Value is equal to `madd_aared_len`**. مقدرا مع اللين عن القوف (للواو الساكنة والياء الساكنة وقبلها حرف مفتوح) ويجب أن يكون مقدار مد اللين أقل من أو يساوي مع العارض": "Panjang Mad Al-Leen saat berhenti di akhir kata (untuk wawu sukun atau ya' yang didahului oleh huruf dengan fathah) seharusnya kurang dari atau sama dengan panjang Mad Al-Arid (pemanjangan sementara karena berhenti). **Nilai bawaan sama dengan `madd_aared_len`**. Nilai Mad Lin saat berhenti (untuk wawu sukun atau ya sukun dengan huruf fathah sebelumnya) dan nilai Mad Lin harus kurang dari atau sama dengan Mad Aared.",
             "The ghonna for merging (Idghaam) noon with Lam and Raa for Hafs.": "Ghunnah untuk menggabung (Idgham) nun dengan Lam dan Ra untuk Hafs.",
