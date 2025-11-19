@@ -12,6 +12,32 @@ def generate_sifat_explanation(table, lang):
     
     explanations = []
     
+    # Kamus penjelasan istilah sifat huruf untuk orang awam
+    sifat_explanations = {
+        "hams": "suara lembut tanpa dengung (seperti angin berhembus)",
+        "jahr": "suara kuat dengan getaran (seperti suara gemuruh)",
+        "shadeed": "bacaan kuat dan tegas (huruf harus ditekan)",
+        "between": "bacaan sedang antara kuat dan lembut",
+        "rikhw": "bacaan lembut dan ringan",
+        "mofakham": "bacaan tebal dan berat (seperti suara dalam)",
+        "moraqaq": "bacaan tipis dan ringan",
+        "low_mofakham": "bacaan agak tebal (sedikit berat)",
+        "monfateh": "mulut terbuka lebar saat membaca",
+        "motbaq": "mulut tertutup saat membaca",
+        "safeer": "ada desisan seperti siulan",
+        "no_safeer": "tidak ada desisan",
+        "moqalqal": "suara bergetar/bergoyang",
+        "not_moqalqal": "suara stabil tanpa getaran",
+        "mokarar": "ada pengulangan suara",
+        "not_mokarar": "tidak ada pengulangan",
+        "motafashie": "suara menyebar/meluas",
+        "not_motafashie": "suara tidak menyebar",
+        "mostateel": "bacaan panjang dan memanjang",
+        "not_mostateel": "bacaan pendek/tidak memanjang",
+        "maghnoon": "ada dengung (ghunnah)",
+        "not_maghnoon": "tidak ada dengung"
+    }
+    
     for row in table:
         tag = row["tag"]
         phoneme = row["phonemes"]
@@ -63,11 +89,19 @@ def generate_sifat_explanation(table, lang):
                     actual_translated = value_translations.get(actual, actual)
                     expected_translated = value_translations.get(expected, expected)
                     
-                    explanations.append(
-                        f"❌ <strong>Huruf '{phoneme}'</strong>: {sifat_name} tidak sesuai. "
-                        f"Dibaca: <span style='color: #ff0000;'>{actual_translated}</span>, "
-                        f"Seharusnya: <span style='color: #00ff00;'>{expected_translated}</span>"
-                    )
+                    # Tambahkan penjelasan untuk orang awam
+                    actual_explanation = sifat_explanations.get(actual, "")
+                    expected_explanation = sifat_explanations.get(expected, "")
+                    
+                    explanation_text = f"❌ <strong>Huruf '{phoneme}'</strong>: {sifat_name} tidak sesuai. "
+                    explanation_text += f"Dibaca: <span style='color: #ff0000;'>{actual_translated}</span>"
+                    if actual_explanation:
+                        explanation_text += f" ({actual_explanation})"
+                    explanation_text += f", Seharusnya: <span style='color: #00ff00;'>{expected_translated}</span>"
+                    if expected_explanation:
+                        explanation_text += f" ({expected_explanation})"
+                    
+                    explanations.append(explanation_text)
         
         elif tag == "insert":
             explanations.append(
@@ -142,6 +176,32 @@ def explain_sifat_html(table, lang):
     if not table:
         return "<p>Tidak ada data sifat huruf yang tersedia</p>"
 
+    # Kamus penjelasan untuk tooltip
+    sifat_tooltips = {
+        "hams": "Suara lembut tanpa dengung (seperti angin berhembus)",
+        "jahr": "Suara kuat dengan getaran (seperti suara gemuruh)",
+        "shadeed": "Bacaan kuat dan tegas (huruf harus ditekan)",
+        "between": "Bacaan sedang antara kuat dan lembut",
+        "rikhw": "Bacaan lembut dan ringan",
+        "mofakham": "Bacaan tebal dan berat (seperti suara dalam)",
+        "moraqaq": "Bacaan tipis dan ringan",
+        "low_mofakham": "Bacaan agak tebal (sedikit berat)",
+        "monfateh": "Mulut terbuka lebar saat membaca",
+        "motbaq": "Mulut tertutup saat membaca",
+        "safeer": "Ada desisan seperti siulan",
+        "no_safeer": "Tidak ada desisan",
+        "moqalqal": "Suara bergetar/bergoyang",
+        "not_moqalqal": "Suara stabil tanpa getaran",
+        "mokarar": "Ada pengulangan suara",
+        "not_mokarar": "Tidak ada pengulangan",
+        "motafashie": "Suara menyebar/meluas",
+        "not_motafashie": "Suara tidak menyebar",
+        "mostateel": "Bacaan panjang dan memanjang",
+        "not_mostateel": "Bacaan pendek/tidak memanjang",
+        "maghnoon": "Ada dengung (ghunnah)",
+        "not_maghnoon": "Tidak ada dengung"
+    }
+
     # Create HTML table with full width
     html_output = """
     <table style="width: 100%; border-collapse: collapse; background-color: #000; color: #fff; margin-bottom: 20px;">
@@ -181,7 +241,13 @@ def explain_sifat_html(table, lang):
             "not_maghnoon": "Not Maghnoon"
         }
         column_name = column_translations.get(key, key.replace("_", " ").title())
-        html_output += f'<th style="border: 1px solid #444; padding: 8px; text-align: left;">{column_name}</th>'
+        
+        # Tambahkan tooltip untuk kolom sifat
+        tooltip = sifat_tooltips.get(key, "")
+        if tooltip and key != "phonemes":
+            html_output += f'<th style="border: 1px solid #444; padding: 8px; text-align: left; cursor: help;" title="{tooltip}">{column_name} ⓘ</th>'
+        else:
+            html_output += f'<th style="border: 1px solid #444; padding: 8px; text-align: left;">{column_name}</th>'
 
     html_output += """
             </tr>
@@ -234,9 +300,7 @@ def explain_sifat_html(table, lang):
             elif tag == "insert":
                 html_output += f'<td style="border: 1px solid #444; padding: 8px; color: #ffff00;">{value}</td>'
             else:
-                html_output += (
-                    f'<td style="border: 1px solid #444; padding: 8px;">{value}</td>'
-                )
+                html_output += f'<td style="border: 1px solid #444; padding: 8px;">{value}</td>'
 
         html_output += "</tr>"
 
@@ -247,7 +311,8 @@ def explain_sifat_html(table, lang):
         <strong>Keterangan Warna:</strong><br>
         <span style="color: #ff0000;">Merah</span>: Tidak sesuai dengan referensi<br>
         <span style="color: #ffff00;">Kuning</span>: Tambahan (tidak ada dalam referensi)<br>
-        <span style="color: #ffffff;">Putih</span>: Sesuai dengan referensi
+        <span style="color: #ffffff;">Putih</span>: Sesuai dengan referensi<br><br>
+        <strong>Tips:</strong> Arahkan kursor ke nama kolom (ⓘ) untuk melihat penjelasan cara membaca
     </div>
     """
 
