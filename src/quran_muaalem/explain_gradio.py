@@ -57,7 +57,7 @@ def explain_phonemes_html(dmp_obj, diffs):
 
 def explain_sifat_html(table, lang):
     if not table:
-        return "<p>No sifat data available</p>"
+        return "<p>Tidak ada data sifat huruf yang tersedia</p>"
 
     # Create HTML table with full width
     html_output = """
@@ -71,7 +71,34 @@ def explain_sifat_html(table, lang):
 
     # Add columns
     for key in base_keys:
-        html_output += f'<th style="border: 1px solid #444; padding: 8px; text-align: left;">{key.replace("_", " ").title()}</th>'
+        # Terjemahkan nama kolom ke bahasa Indonesia
+        column_translations = {
+            "phonemes": "Huruf",
+            "hams": "Hams",
+            "jahr": "Jahr", 
+            "shadeed": "Shadeed",
+            "between": "Antara",
+            "rikhw": "Rikhw",
+            "mofakham": "Mofakham",
+            "moraqaq": "Moraqaq",
+            "low_mofakham": "Low Mofakham",
+            "monfateh": "Monfateh",
+            "motbaq": "Motbaq",
+            "safeer": "Safeer",
+            "no_safeer": "No Safeer",
+            "moqalqal": "Moqalqal",
+            "not_moqalqal": "Not Moqalqal",
+            "mokarar": "Mokarar",
+            "not_mokarar": "Not Mokarar",
+            "motafashie": "Motafashie",
+            "not_motafashie": "Not Motafashie",
+            "mostateel": "Mostateel",
+            "not_mostateel": "Not Mostateel",
+            "maghnoon": "Maghnoon",
+            "not_maghnoon": "Not Maghnoon"
+        }
+        column_name = column_translations.get(key, key.replace("_", " ").title())
+        html_output += f'<th style="border: 1px solid #444; padding: 8px; text-align: left;">{column_name}</th>'
 
     html_output += """
             </tr>
@@ -88,9 +115,35 @@ def explain_sifat_html(table, lang):
             exp_key = f"exp_{key}"
             value = str(row[key])
 
-            # Apply Arabic translation if needed
-            if key != "phonemes" and lang == "arabic":
-                value = SIFAT_ATTR_TO_ARABIC_WITHOUT_BRACKETS.get(value, value)
+            # Terjemahkan nilai ke bahasa Indonesia jika bukan kolom phonemes
+            if key != "phonemes":
+                # Kamus terjemahan nilai sifat huruf
+                value_translations = {
+                    "hams": "همس",
+                    "jahr": "جهر", 
+                    "shadeed": "شديد",
+                    "between": "بين الشدة والرخاوة",
+                    "rikhw": "رخو",
+                    "mofakham": "مفخم",
+                    "moraqaq": "مرقق",
+                    "low_mofakham": "أدنى المفخم",
+                    "monfateh": "منفتح",
+                    "motbaq": "مطبق",
+                    "safeer": "صفير",
+                    "no_safeer": "لا صفير",
+                    "moqalqal": "مقلقل",
+                    "not_moqalqal": "لا قلقلة",
+                    "mokarar": "مكرر",
+                    "not_mokarar": "لا تكرار",
+                    "motafashie": "متفشي",
+                    "not_motafashie": "لا تفشي",
+                    "mostateel": "مستطيل",
+                    "not_mostateel": "لا إستطالة",
+                    "maghnoon": "مغن",
+                    "not_maghnoon": "لا غنة",
+                    "None": "-"
+                }
+                value = value_translations.get(value, value)
 
             # Apply styling based on tag and comparison
             if tag == "exact" and row.get(exp_key) != row[key]:
@@ -107,6 +160,12 @@ def explain_sifat_html(table, lang):
     html_output += """
         </tbody>
     </table>
+    <div style="margin-top: 10px; color: #fff;">
+        <strong>Keterangan Warna:</strong><br>
+        <span style="color: #ff0000;">Merah</span>: Tidak sesuai dengan referensi<br>
+        <span style="color: #ffff00;">Kuning</span>: Tambahan (tidak ada dalam referensi)<br>
+        <span style="color: #ffffff;">Putih</span>: Sesuai dengan referensi
+    </div>
     """
 
     return html_output
