@@ -540,7 +540,7 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
     # Initialize field names list
     field_names = []
 
-    with gr.Tab("Analisis Utama - Main Analysis"):
+    with gr.Tab("Analisis Utama - Analisis Bacaan"):
         gr.Markdown("# Deteksi Kesalahan Bacaan, Tajwid, dan Sifat Huruf")
         gr.Markdown("Pilih bagian Al-Quran yang ingin Anda pelajari")
 
@@ -597,7 +597,7 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                     "Periksa Bacaan", variant="primary", elem_id="analyze_btn"
                 )
                 output_html = gr.HTML(
-                    label="Hasil pemeriksaan",
+                    label="Hasil Pemeriksaan Bacaan",
                     elem_id="output_html",
                 )
 
