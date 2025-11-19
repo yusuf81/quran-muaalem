@@ -35,7 +35,13 @@ def generate_sifat_explanation(table, lang):
         "mostateel": "bacaan panjang dan memanjang",
         "not_mostateel": "bacaan pendek/tidak memanjang",
         "maghnoon": "ada dengung (ghunnah)",
-        "not_maghnoon": "tidak ada dengung"
+        "not_maghnoon": "tidak ada dengung",
+        # Tambahkan penjelasan untuk sifat lainnya
+        "tafkheem_or_taqeeq": "penebalan (tafkheem) atau penipisan (tarqeeq) huruf",
+        "idgham_or_izhar": "peluluran (idgham) atau pengucapan jelas (izhar)",
+        "sakt_or_idraj": "jeda (sakt) atau tanpa jeda (idraj)",
+        "wasl_or_waqf": "bersambung (wasl) atau berhenti (waqf)",
+        "ithbat_or_hadhf": "penetapan (ithbat) atau penghapusan (hadhf)"
     }
     
     for row in table:
@@ -54,6 +60,20 @@ def generate_sifat_explanation(table, lang):
             if mismatches:
                 exp_phoneme = row.get("exp_phonemes", phoneme)
                 for base_key, actual, expected in mismatches:
+                    # Skip jika nilai aktual adalah PAD (ini adalah masalah model)
+                    if actual == "[PAD]" or actual == "PAD":
+                        explanations.append(
+                            f"⚠️ <strong>Huruf '{phoneme}'</strong>: {base_key} tidak terdeteksi oleh model"
+                        )
+                        continue
+                    
+                    # Skip jika nilai expected adalah PAD (masalah data referensi)
+                    if expected == "[PAD]" or expected == "PAD":
+                        explanations.append(
+                            f"⚠️ <strong>Huruf '{phoneme}'</strong>: {base_key} tidak tersedia dalam referensi"
+                        )
+                        continue
+                    
                     # Terjemahkan nama sifat
                     sifat_names = {
                         "hams": "sifat hams", "jahr": "sifat jahr", 
@@ -66,7 +86,13 @@ def generate_sifat_explanation(table, lang):
                         "mokarar": "sifat mokarar", "not_mokarar": "sifat not mokarar",
                         "motafashie": "sifat motafashie", "not_motafashie": "sifat not motafashie",
                         "mostateel": "sifat mostateel", "not_mostateel": "sifat not mostateel",
-                        "maghnoon": "sifat maghnoon", "not_maghnoon": "sifat not maghnoon"
+                        "maghnoon": "sifat maghnoon", "not_maghnoon": "sifat not maghnoon",
+                        # Tambahkan sifat lainnya
+                        "tafkheem_or_taqeeq": "sifat tafkheem atau tarqeeq",
+                        "idgham_or_izhar": "sifat idgham atau izhar", 
+                        "sakt_or_idraj": "sifat sakt atau idraj",
+                        "wasl_or_waqf": "sifat wasl atau waqf",
+                        "ithbat_or_hadhf": "sifat ithbat atau hadhf"
                     }
                     
                     # Terjemahkan nilai sifat
@@ -82,7 +108,13 @@ def generate_sifat_explanation(table, lang):
                         "motafashie": "متفشي", "not_motafashie": "لا تفشي",
                         "mostateel": "مستطيل", "not_mostateel": "لا إستطالة",
                         "maghnoon": "مغن", "not_maghnoon": "لا غنة",
-                        "None": "-"
+                        # Tambahkan nilai untuk sifat lainnya
+                        "tafkheem": "تفخيم", "tarqeeq": "ترقيق",
+                        "idgham": "إدغام", "izhar": "إظهار", 
+                        "sakt": "سكت", "idraj": "إدراج",
+                        "wasl": "وصل", "waqf": "وقف",
+                        "ithbat": "إثبات", "hadhf": "حذف",
+                        "None": "-", "[PAD]": "-", "PAD": "-"
                     }
                     
                     sifat_name = sifat_names.get(base_key, base_key)
@@ -199,7 +231,13 @@ def explain_sifat_html(table, lang):
         "mostateel": "Bacaan panjang dan memanjang",
         "not_mostateel": "Bacaan pendek/tidak memanjang",
         "maghnoon": "Ada dengung (ghunnah)",
-        "not_maghnoon": "Tidak ada dengung"
+        "not_maghnoon": "Tidak ada dengung",
+        # Tambahkan untuk sifat lainnya
+        "tafkheem_or_taqeeq": "Penebalan (tafkheem) atau penipisan (tarqeeq) huruf",
+        "idgham_or_izhar": "Peluluran (idgham) atau pengucapan jelas (izhar)",
+        "sakt_or_idraj": "Jeda (sakt) atau tanpa jeda (idraj)",
+        "wasl_or_waqf": "Bersambung (wasl) atau berhenti (waqf)",
+        "ithbat_or_hadhf": "Penetapan (ithbat) atau penghapusan (hadhf)"
     }
 
     # Create HTML table with full width
@@ -238,7 +276,13 @@ def explain_sifat_html(table, lang):
             "mostateel": "Mostateel",
             "not_mostateel": "Not Mostateel",
             "maghnoon": "Maghnoon",
-            "not_maghnoon": "Not Maghnoon"
+            "not_maghnoon": "Not Maghnoon",
+            # Tambahkan kolom untuk sifat lainnya
+            "tafkheem_or_taqeeq": "Tafkheem/Tarqeeq",
+            "idgham_or_izhar": "Idgham/Izhar",
+            "sakt_or_idraj": "Sakt/Idraj", 
+            "wasl_or_waqf": "Wasl/Waqf",
+            "ithbat_or_hadhf": "Ithbat/Hadhf"
         }
         column_name = column_translations.get(key, key.replace("_", " ").title())
         
@@ -290,7 +334,13 @@ def explain_sifat_html(table, lang):
                     "not_mostateel": "لا إستطالة",
                     "maghnoon": "مغن",
                     "not_maghnoon": "لا غنة",
-                    "None": "-"
+                    # Tambahkan nilai untuk sifat lainnya
+                    "tafkheem": "تفخيم", "tarqeeq": "ترقيق",
+                    "idgham": "إدغام", "izhar": "إظهار", 
+                    "sakt": "سكت", "idraj": "إدراج",
+                    "wasl": "وصل", "waqf": "وقف",
+                    "ithbat": "إثبات", "hadhf": "حذف",
+                    "None": "-", "[PAD]": "-", "PAD": "-"
                 }
                 value = value_translations.get(value, value)
 
