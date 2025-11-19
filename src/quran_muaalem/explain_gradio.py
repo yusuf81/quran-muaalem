@@ -5,6 +5,81 @@ from .explain import expalin_sifat
 from .modeling.vocab import SIFAT_ATTR_TO_ARABIC_WITHOUT_BRACKETS
 
 
+def generate_sifat_explanation(table, lang):
+    """Generate Indonesian text explanations for sifat comparison results"""
+    if not table:
+        return ""
+    
+    explanations = []
+    
+    for row in table:
+        tag = row["tag"]
+        phoneme = row["phonemes"]
+        
+        if tag == "exact":
+            # Check for mismatches in exact rows
+            mismatches = []
+            for key in row.keys():
+                if key.startswith("exp_") and key != "exp_phonemes":
+                    base_key = key.replace("exp_", "")
+                    if row.get(key) != row.get(base_key):
+                        mismatches.append((base_key, row.get(base_key), row.get(key)))
+            
+            if mismatches:
+                exp_phoneme = row.get("exp_phonemes", phoneme)
+                for base_key, actual, expected in mismatches:
+                    # Terjemahkan nama sifat
+                    sifat_names = {
+                        "hams": "sifat hams", "jahr": "sifat jahr", 
+                        "shadeed": "sifat shadeed", "between": "sifat antara",
+                        "rikhw": "sifat rikhw", "mofakham": "sifat mofakham",
+                        "moraqaq": "sifat moraqaq", "low_mofakham": "sifat low mofakham",
+                        "monfateh": "sifat monfateh", "motbaq": "sifat motbaq",
+                        "safeer": "sifat safeer", "no_safeer": "sifat no safeer",
+                        "moqalqal": "sifat moqalqal", "not_moqalqal": "sifat not moqalqal",
+                        "mokarar": "sifat mokarar", "not_mokarar": "sifat not mokarar",
+                        "motafashie": "sifat motafashie", "not_motafashie": "sifat not motafashie",
+                        "mostateel": "sifat mostateel", "not_mostateel": "sifat not mostateel",
+                        "maghnoon": "sifat maghnoon", "not_maghnoon": "sifat not maghnoon"
+                    }
+                    
+                    # Terjemahkan nilai sifat
+                    value_translations = {
+                        "hams": "همس", "jahr": "جهر", 
+                        "shadeed": "شديد", "between": "بين الشدة والرخاوة",
+                        "rikhw": "رخو", "mofakham": "مفخم",
+                        "moraqaq": "مرقق", "low_mofakham": "أدنى المفخم",
+                        "monfateh": "منفتح", "motbaq": "مطبق",
+                        "safeer": "صفير", "no_safeer": "لا صفير",
+                        "moqalqal": "مقلقل", "not_moqalqal": "لا قلقلة",
+                        "mokarar": "مكرر", "not_mokarar": "لا تكرار",
+                        "motafashie": "متفشي", "not_motafashie": "لا تفشي",
+                        "mostateel": "مستطيل", "not_mostateel": "لا إستطالة",
+                        "maghnoon": "مغن", "not_maghnoon": "لا غنة",
+                        "None": "-"
+                    }
+                    
+                    sifat_name = sifat_names.get(base_key, base_key)
+                    actual_translated = value_translations.get(actual, actual)
+                    expected_translated = value_translations.get(expected, expected)
+                    
+                    explanations.append(
+                        f"❌ <strong>Huruf '{phoneme}'</strong>: {sifat_name} tidak sesuai. "
+                        f"Dibaca: <span style='color: #ff0000;'>{actual_translated}</span>, "
+                        f"Seharusnya: <span style='color: #00ff00;'>{expected_translated}</span>"
+                    )
+        
+        elif tag == "insert":
+            explanations.append(
+                f"⚠️ <strong>Huruf '{phoneme}'</strong>: tambahan yang tidak ada dalam referensi"
+            )
+    
+    if not explanations:
+        explanations.append("✅ Semua sifat huruf sesuai dengan referensi")
+    
+    return "<br>".join(explanations)
+
+
 def explain_for_gradio(
     phonemes: str,
     exp_phonemes: str,
@@ -24,15 +99,23 @@ def explain_for_gradio(
     # Create HTML for sifat table using your existing function
     sifat_table = expalin_sifat(sifat, exp_sifat, diffs)
     sifat_html = explain_sifat_html(sifat_table, lang)
+    
+    # Generate text explanations
+    text_explanations = generate_sifat_explanation(sifat_table, lang)
 
-    # Combine both sections
+    # Combine all sections
     html_output = f"""
     <div style="font-family: monospace; width: 100%;">
         <h3>Perbandingan Huruf</h3>
         {phoneme_html}
-        <h3>Perbandingan Sifat Huruf</h3>
+        
+        <h3>Analisis Kesalahan Sifat Huruf</h3>
+        <div style="background-color: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 20px; color: #fff;">
+            {text_explanations}
+        </div>
+        
+        <h3>Detail Perbandingan Sifat Huruf</h3>
         {sifat_html}
-       <div class="color-legend">
     </div>
     """
 
