@@ -668,7 +668,8 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
 
 
 def main(app=app):
-    app.launch(server_name="0.0.0.0", share=False)
+#    app.launch(server_name="0.0.0.0", share=False)
+    app.launch(server_name="0.0.0.0", share=True)
 
 
 if __name__ == "__main__":
