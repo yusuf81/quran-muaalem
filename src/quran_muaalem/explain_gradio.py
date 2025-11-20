@@ -193,11 +193,11 @@ def explain_phonemes_html(dmp_obj, diffs):
     # Process each difference (same logic as terminal version)
     for op, data in diffs:
         if op == dmp_obj.DIFF_EQUAL:
-            html_output += f'<span style="color: #ffffff;">{data}</span>'
+            html_output += f'<span style="color: currentColor;">{data}</span>'
         elif op == dmp_obj.DIFF_INSERT:
-            html_output += f'<span style="color: #00ff00;">{data}</span>'
+            html_output += f'<span style="color: #16a34a;">{data}</span>'
         elif op == dmp_obj.DIFF_DELETE:
-            html_output += f'<span style="color: #ff0000; text-decoration: line-through;">{data}</span>'
+            html_output += f'<span style="color: #c53030; text-decoration: line-through;">{data}</span>'
 
     html_output += "</div>"
     return html_output
