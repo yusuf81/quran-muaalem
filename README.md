@@ -1,7 +1,7 @@
 # Quran Muaalem
 
 <div align="center">
-<strong>بعون الله وتوفيقه لا شريك له نقدم المعلم القرآني الذكي القادر على كشف أخطاء التلاوة والتجويد وصفات الحروف</strong>
+<strong>Dengan izin Allah, kami hadirkan asisten cerdas untuk mendeteksi kesalahan bacaan, tajwid, dan sifat huruf Al-Qur'an.</strong>
 
 [![PyPI][pypi-badge]][pypi-url]
 [![Python Versions][python-badge]][python-url]
@@ -32,96 +32,91 @@
 [discord-url]: https://discord.gg/hJWW6fCH
 
 <div align="center" style="background-color: #f0f8ff; border-left: 5px solid #4CAF50; padding: 15px; margin: 20px 0; border-radius: 5px;">
-  <h3 style="color: #2c3e50; margin-top: 0;">📖 رابط لتجربة المعلم القرآني</h3>
-  <p style="margin: 10px 0;">يرجى الضغط على للتجربة:</p>
-  <a href="https://662a040e1863a5445c.gradio.live" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;">الرابط</a>
+  <h3 style="color: #2c3e50; margin-top: 0;">📖 Coba Pengajar Qur'an</h3>
+  <p style="margin: 10px 0;">Klik untuk mencoba:</p>
+  <a href="https://662a040e1863a5445c.gradio.live" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;">Buka Demo</a>
   <p style="background-color: #ffeb3b; padding: 8px; border-radius: 3px; display: inline-block; margin: 10px 0;">
-    ⚠️ <strong>تنبيه:</strong> هذا الرابط سينتهي في <span style="color: #d32f2f; font-weight: bold;">27 أغسطس 2025</span>
+    ⚠️ <strong>Catatan:</strong> tautan kedaluwarsa pada <span style="color: #d32f2f; font-weight: bold;">27 Agustus 2025</span>
   </p>
 </div>
 
-[![ALT_TEXT](https://img.youtube.com/vi/CsFoznO08-Q/0.jpg)](https://www.youtube.com/watch?v=CsFoznO08-Q)
+[![Demo Video](https://img.youtube.com/vi/CsFoznO08-Q/0.jpg)](https://www.youtube.com/watch?v=CsFoznO08-Q)
 
+## Fitur Utama
 
-## الممزيات
+- Dilatih di atas skrip fonetik Al-Qur'an [quran-transcript](https://github.com/obadx/quran-transcript) untuk mendeteksi kesalahan huruf, tajwid, dan sifat huruf.
+- Model ukuran sedang (~660M parameter).
+- Hanya membutuhkan ~1.5 GB VRAM untuk inferensi.
+- Arsitektur CTC multilevel yang inovatif.
 
-* مدرب على الرسم الصوتي للقرآن الكريم: [quran-transcript](https://github.com/obadx/quran-transcript) القادر على كشف أخطاء الحروف والتجويد وصفات الحروف
-* نموذج معقول الحجم 660 MP 
-* يحتاج فقط إله 1.5 GB من ذاكرة معالج الرسوميات
-* معمارية مبتكرة: CTC متعدد المستويات
+## Arsitektur
 
-## المعمارية
-معمارية مبتكرة: CTC متعدد المستويات. حيث كل مستوي يتدرب على وجه معين
+Arsitektur CTC multilevel: tiap level belajar aspek berbeda.
 
 ![multi-lvel-ctc](./assets/figures/mutli-level-ctc.png)
 
-## الخطوات المختصرة للتطوير
+## Alur Pengembangan Singkat
 
-* تجميع التلاوت القرآنية من القراء المتقنين: [prepare-quran-dataset](https://github.com/obadx/prepare-quran-dataset)
-* تقسيم التلاوت على حسب الوقف وليس الآية باستخدام [المقسم](https://github.com/obadx/recitations-segmenter)
-* الحصو على النص القرآني من المقاطع الصوتية باسخدام [نموذج ترتيل](https://huggingface.co/tarteel-ai/whisper-base-ar-quran)
-* تصحيح النصوص المستخرجة من ترتيل باستخدام  [خوارزمية التسميع](https://github.com/obadx/quran-transcript)
-* تحويل الرسم الإملائي للرسم العثماني: [quran-transcript](https://github.com/obadx/quran-transcript)
-* تحويل الرسم العثماني للرسم الصوتي للقرآني الكريم الذي يصف كل قواعد التجويد ما عدا الإشمام: [quran-transcript](https://github.com/obadx/quran-transcript)
-* تدريب النموذج على معمارية [Wav2Vec2BERT](https://huggingface.co/docs/transformers/model_doc/wav2vec2-bert)
+- Kumpulkan tilawah dari qari bersanad tinggi: [prepare-quran-dataset](https://github.com/obadx/prepare-quran-dataset)
+- Segmentasi tilawah per waqaf (bukan per ayat) dengan [recitations-segmenter](https://github.com/obadx/recitations-segmenter)
+- Ekstrak teks Qur'an dari audio memakai [Whisper Tarteel](https://huggingface.co/tarteel-ai/whisper-base-ar-quran)
+- Koreksi teks dengan [algoritma tasmi’](https://github.com/obadx/quran-transcript)
+- Ubah tulisan imlaiy ke Utsmani dan ke skrip fonetik tajwid: [quran-transcript](https://github.com/obadx/quran-transcript)
+- Latih model dengan arsitektur [Wav2Vec2BERT](https://huggingface.co/docs/transformers/model_doc/wav2vec2-bert)
 
+## Cara Menggunakan Model
 
-## استخدام النوذج
+### Melalui Gradio UI
 
-
-### استخدام النموذج عن طريق واجهة gradio
-
-قم بتزيل  [uv](https://docs.astral.sh/uv/) 
+Pasang [uv](https://docs.astral.sh/uv/):
 
 ```bash
 pip install uv
 ```
-أو
+atau
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-بعد ذلك قم بتنزيل `ffmpeg`
+Pasang `ffmpeg`:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y ffmpeg
 ```
 
-أو من خلال `anaconda`
+Atau lewat `conda`:
 ```bash
 conda install ffmpeg
 ```
 
-قم بتشغيل `gradio` ب command واحد فقط:
+Jalankan UI Gradio (mengambil model dari Hugging Face):
+
 ```bash
-uvx --no-cache --from https://github.com/obadx/quran-muaalem.git[ui]  quran-muaalem-ui
+uvx --no-cache --from https://github.com/obadx/quran-muaalem.git[ui] quran-muaalem-ui
 ```
-او
+atau
 ```bash
-uvx quran-muaalem[ui]  quran-muaalem-ui
+uvx quran-muaalem[ui] quran-muaalem-ui
 ```
 
-### عن طريق python API
+### Melalui Python API
 
-
-#### Installation
-
-First, install the required dependencies:
+#### Instalasi
 
 ```bash
-# Install system dependencies
+# Dependensi sistem
 sudo apt-get install -y ffmpeg libsndfile1 portaudio19-dev
 
-# Install Python packages
+# Paket Python
 pip install quran-muaalem librosa "numba>=0.61.2"
 ```
 
-## Basic Usage Example
+## Contoh Pemakaian Dasar
 
 ```python
 """
-Basic example of using the Quran Muaalem package for phonetic analysis of Quranic recitation.
+Contoh dasar penggunaan Quran Muaalem untuk analisis fonetik tilawah.
 """
 
 from dataclasses import asdict
@@ -132,66 +127,39 @@ from quran_transcript import Aya, quran_phonetizer, MoshafAttributes
 import torch
 from librosa.core import load
 
-# Import the main Muaalem class (adjust import based on your actual package structure)
 from quran_muaalem import Muaalem
 
-# Setup logging to see informative messages
 logging.basicConfig(level=logging.INFO)
 
 def analyze_recitation(audio_path):
     """
-    Analyze a Quranic recitation audio file using the Muaalem model.
-    
-    Args:
-        audio_path (str): Path to the audio file to analyze
+    Analisis bacaan Al-Qur'an menggunakan model Muaalem.
     """
-    # Configuration
-    sampling_rate = 16000  # Must be 16000 Hz
-    device = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available
-    
-    # Step 1: Prepare the Quranic reference text
-    # Get the Uthmani script for a specific verse (Aya 8, Surah 75 in this example)
+    sampling_rate = 16000
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
     uthmani_ref = Aya(8, 75).get_by_imlaey_words(17, 9).uthmani
-    
-    # Step 2: Configure the recitation style (Moshaf attributes)
     moshaf = MoshafAttributes(
-        rewaya="hafs",        # Recitation style (Hafs is most common)
-        madd_monfasel_len=2,  # Length of separated elongation
-        madd_mottasel_len=4,  # Length of connected elongation
-        madd_mottasel_waqf=4, # Length of connected elongation when stopping
-        madd_aared_len=2,     # Length of necessary elongation
+        rewaya="hafs",
+        madd_monfasel_len=2,
+        madd_mottasel_len=4,
+        madd_mottasel_waqf=4,
+        madd_aared_len=2,
     )
-    # see: https://github.com/obadx/prepare-quran-dataset?tab=readme-ov-file#moshaf-attributes-docs
-    
-    # Step 3: Convert text to phonetic representation
-    # see docs for phnetizer: https://github.com/obadx/quran-transcript
+
     phonetizer_out = quran_phonetizer(uthmani_ref, moshaf, remove_spaces=True)
-    
-    # Step 4: Initialize the Muaalem model
     muaalem = Muaalem(device=device)
-    
-    # Step 5: Load and prepare the audio
     wave, _ = load(audio_path, sr=sampling_rate, mono=True)
-    
-    # Step 6: Process the audio with the model
-    # The model analyzes the phonetic properties of the recitation
-    outs = muaalem(
-        [wave],           # Audio data
-        [phonetizer_out],          # Phonetic reference
-        sampling_rate=sampling_rate
-    )
-    
-    # Step 7: Display the results
+
+    outs = muaalem([wave], [phonetizer_out], sampling_rate=sampling_rate)
+
     for out in outs:
         print("Predicted Phonemes:", out.phonemes.text)
-        
-        # Display detailed phonetic features for each phoneme
         for sifa in out.sifat:
             print(json.dumps(asdict(sifa), indent=2, ensure_ascii=False))
             print("*" * 30)
         print("-" * 40)
 
-    # Explaining Results
     explain_for_terminal(
         outs[0].phonemes.text,
         phonetizer_out.phonemes,
@@ -201,16 +169,14 @@ def analyze_recitation(audio_path):
 
 
 if __name__ == "__main__":
-    # Replace with the path to your audio file
     audio_path = "./assets/test.wav"
-    
     try:
         analyze_recitation(audio_path)
     except Exception as e:
         logging.error(f"Error processing audio: {e}")
 ```
 
-Output:
+Contoh keluaran (dari terminal):
 
 ```bash
 ءِننننَللَااهَبِكُللِشَيءِنعَلِۦۦمُ۾۾۾بَرَااااءَتُممممِنَللَااهِوَرَسُۥۥلِه
@@ -253,7 +219,7 @@ Output:
 └──────────┴────────────────┴──────────────┴──────────────┴──────────────┴───────────┴─────────────┴────────────────────┴───────────────┴───────────────────┴──────────┘
 ```
 
-### API Docs
+### API Docs (ringkas)
 
 ```python
 class Muaalem:
@@ -264,12 +230,12 @@ class Muaalem:
         dtype=torch.bfloat16,
     ):
         """
-        Initializing Muallem Model
+        Inisialisasi model Muaalem.
 
         Args:
-            model_name_or_path: the huggingface model name or path
-            device: the device to run model on
-            dtype: the torch dtype. Default is `torch.bfloat16` as the model was trained on
+            model_name_or_path: nama atau path model di Hugging Face
+            device: CPU/GPU untuk inferensi
+            dtype: tipe data torch (default bfloat16 sesuai pelatihan)
         """
 
     @torch.no_grad()
@@ -279,46 +245,13 @@ class Muaalem:
         ref_quran_phonetic_script_list: list[QuranPhoneticScriptOutput],
         sampling_rate: int,
     ) -> list[MuaalemOutput]:
-        """Infrence Funcion for the Quran Muaalem Project
+        """
+        Fungsi inferensi.
 
-                waves: input waves  batch , seq_len with different formats described above
-                ref_quran_phonetic_script_list (list[QuranPhoneticScriptOutput]): list of the
-                    phonetized ouput of `quran_transcript.quran_phonetizer` with `remove_space=True`
+        waves: batch sinyal audio
+        ref_quran_phonetic_script_list: output fonetizer `quran_phonetizer` dengan remove_space=True
+        sampling_rate: harus 16000
 
-                sampleing_rate (int): has to be 16000
-
-        Returns:
-            list[MuaalemOutput]:
-                A list of output objects, each containing phoneme predictions and their
-                phonetic features (sifat) for a processed input.
-
-            Each MuaalemOutput contains:
-                phonemes (Unit):
-                    A dataclass representing the predicted phoneme sequence with:
-                        text (str): Concatenated string of all phonemes.
-                        probs (Union[torch.FloatTensor, list[float]]):
-                            Confidence probabilities for each predicted phoneme.
-                        ids (Union[torch.LongTensor, list[int]]):
-                            Token IDs corresponding to each phoneme.
-
-                sifat (list[Sifa]):
-                    A list of phonetic feature dataclasses (one per phoneme) with the
-                    following optional properties (each is a SingleUnit or None):
-                        - phonemes_group (str): the phonemes associated with the `sifa`
-                        - hams_or_jahr (SingleUnit): either `hams` or `jahr`
-                        - shidda_or_rakhawa (SingleUnit): either `shadeed`, `between`, or `rikhw`
-                        - tafkheem_or_taqeeq (SingleUnit): either `mofakham`, `moraqaq`, or `low_mofakham`
-                        - itbaq (SingleUnit): either `monfateh`, or `motbaq`
-                        - safeer (SingleUnit): either `safeer`, or `no_safeer`
-                        - qalqla (SingleUnit): eithr `moqalqal`, or `not_moqalqal`
-                        - tikraar (SingleUnit): either `mokarar` or `not_mokarar`
-                        - tafashie (SingleUnit): either `motafashie`, or `not_motafashie`
-                        - istitala (SingleUnit): either `mostateel`, or `not_mostateel`
-                        - ghonna (SingleUnit): either `maghnoon`, or `not_maghnoon`
-
-            Each SingleUnit in Sifa properties contains:
-                text (str): The feature's categorical label (e.g., "hams", "shidda").
-                prob (float): Confidence probability for this feature.
-                idx (int): Identifier for the feature class.
+        Mengembalikan list MuaalemOutput yang memuat fonem dan sifat huruf.
         """
 ```
