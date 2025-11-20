@@ -449,6 +449,13 @@ def update_uthmani_ref(sura_idx, aya_idx, start_idx, num_words):
         return f"Kesalahan: {str(e)}"
 
 
+def update_uthmani_ref_html(sura_idx, aya_idx, start_idx, num_words):
+    text = update_uthmani_ref(sura_idx, aya_idx, start_idx, num_words)
+    if not text:
+        return ""
+    return f"<div style='font-size: 28px; line-height: 1.6;'>{text}</div>"
+
+
 def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
     global current_moshaf
 
@@ -546,8 +553,6 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
 
         with gr.Row():
             with gr.Column(scale=1):
-                gr.Markdown("### Perbandingan Bacaan")
-
                 # Create sura dropdown with both index and name
                 sura_choices = [
                     (f"{idx} - {sura_idx_to_name[idx]}", idx) for idx in range(1, 115)
@@ -584,9 +589,12 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                     interactive=False,
                     elem_id="uthmani_text",
                 )
+                uthmani_display = gr.HTML(
+                    label="Teks Rujukan (tampilan besar)",
+                    elem_id="uthmani_display",
+                )
 
             with gr.Column(scale=2):
-                gr.Markdown("### فحص التلاوة القرآنية")
                 audio_input = gr.Audio(
                     sources=["upload", "microphone"],
                     label="Unggah atau Rekam Audio",
@@ -607,6 +615,11 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
             inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
             outputs=uthmani_text,
         )
+        app.load(
+            update_uthmani_ref_html,
+            inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+            outputs=uthmani_display,
+        )
 
         # Update aya dropdown when sura changes and reset aya_idx to 1
         sura_dropdown.change(
@@ -615,6 +628,10 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
             update_uthmani_ref,
             inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
             outputs=uthmani_text,
+        ).then(
+            update_uthmani_ref_html,
+            inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+            outputs=uthmani_display,
         )
 
         # Update uthmani text when any parameter changes
@@ -623,6 +640,10 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 update_uthmani_ref,
                 inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
                 outputs=uthmani_text,
+            ).then(
+                update_uthmani_ref_html,
+                inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+                outputs=uthmani_display,
             )
 
         # Process audio when button is clicked
