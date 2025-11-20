@@ -2,7 +2,7 @@ name: Python Package Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ indonesia ]
 
 jobs:
   test:
