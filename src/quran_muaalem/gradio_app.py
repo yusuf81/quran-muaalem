@@ -487,7 +487,6 @@ def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
             phonetizer_out.phonemes,
             outs[0].sifat,
             phonetizer_out.sifat,
-            lang="arabic",
         )
 
         return explanation_html

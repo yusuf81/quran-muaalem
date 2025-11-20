@@ -1,11 +1,9 @@
-from typing import Literal
 import diff_match_patch as dmp
 
 from .explain import expalin_sifat
-from .modeling.vocab import SIFAT_ATTR_TO_ARABIC_WITHOUT_BRACKETS
 
 
-def generate_sifat_explanation(table, lang):
+def generate_sifat_explanation(table):
     """Generate Indonesian text explanations for sifat comparison results"""
     if not table:
         return ""
@@ -151,7 +149,6 @@ def explain_for_gradio(
     exp_phonemes: str,
     sifat: list,
     exp_sifat: list,
-    lang: Literal["arabic", "english"] = "english",
 ) -> str:
     # Create diff-match-patch object
     dmp_obj = dmp.diff_match_patch()
@@ -164,10 +161,10 @@ def explain_for_gradio(
 
     # Create HTML for sifat table using your existing function
     sifat_table = expalin_sifat(sifat, exp_sifat, diffs)
-    sifat_html = explain_sifat_html(sifat_table, lang)
+    sifat_html = explain_sifat_html(sifat_table)
     
     # Generate text explanations
-    text_explanations = generate_sifat_explanation(sifat_table, lang)
+    text_explanations = generate_sifat_explanation(sifat_table)
 
     # Combine all sections
     html_output = f"""
@@ -204,7 +201,7 @@ def explain_phonemes_html(dmp_obj, diffs):
     return html_output
 
 
-def explain_sifat_html(table, lang):
+def explain_sifat_html(table):
     if not table:
         return "<p>Tidak ada data sifat huruf yang tersedia</p>"
 
