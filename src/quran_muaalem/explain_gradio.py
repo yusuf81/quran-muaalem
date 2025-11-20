@@ -149,6 +149,7 @@ def explain_for_gradio(
     exp_phonemes: str,
     sifat: list,
     exp_sifat: list,
+    original_text: str = "",
 ) -> str:
     # Create diff-match-patch object
     dmp_obj = dmp.diff_match_patch()
@@ -168,11 +169,16 @@ def explain_for_gradio(
     # Combine sections (omit detailed table to keep output ringkas)
     html_output = f"""
     <div style="font-family: monospace; width: 100%;">
+        <h3>Teks Rujukan (Utsmani)</h3>
+        <div style="padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 24px;">
+            {original_text}
+        </div>
+
         <h3>Perbandingan Huruf</h3>
         {phoneme_html}
         
         <h3>Analisis Kesalahan Sifat Huruf</h3>
-        <div style="background-color: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 20px; color: #fff;">
+        <div style="padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #444;">
             {text_explanations}
         </div>
     </div>
@@ -182,7 +188,7 @@ def explain_for_gradio(
 
 
 def explain_phonemes_html(dmp_obj, diffs):
-    html_output = '<div style="background-color: #000; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 30px;">'
+    html_output = '<div style="padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 30px; color: inherit;">'
 
     # Process each difference (same logic as terminal version)
     for op, data in diffs:
