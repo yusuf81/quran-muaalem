@@ -159,14 +159,13 @@ def explain_for_gradio(
     # Create HTML for phoneme differences
     phoneme_html = explain_phonemes_html(dmp_obj, diffs)
 
-    # Create HTML for sifat table using your existing function
+    # Build sifat comparison table (used for textual explanations only)
     sifat_table = expalin_sifat(sifat, exp_sifat, diffs)
-    sifat_html = explain_sifat_html(sifat_table)
-    
+
     # Generate text explanations
     text_explanations = generate_sifat_explanation(sifat_table)
 
-    # Combine all sections
+    # Combine sections (omit detailed table to keep output ringkas)
     html_output = f"""
     <div style="font-family: monospace; width: 100%;">
         <h3>Perbandingan Huruf</h3>
@@ -176,9 +175,6 @@ def explain_for_gradio(
         <div style="background-color: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 20px; color: #fff;">
             {text_explanations}
         </div>
-        
-        <h3>Detail Perbandingan Sifat Huruf</h3>
-        {sifat_html}
     </div>
     """
 
