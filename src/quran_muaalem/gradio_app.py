@@ -453,7 +453,13 @@ def update_uthmani_ref_html(sura_idx, aya_idx, start_idx, num_words):
     text = update_uthmani_ref(sura_idx, aya_idx, start_idx, num_words)
     if not text:
         return ""
-    return f"<div style='font-size: 28px; line-height: 1.6;'>{text}</div>"
+    return (
+        "<div style=\"font-size: 28px; line-height: 1.7; text-align: center; "
+        'direction: rtl; font-family: "Scheherazade New", "Amiri", '
+        '"Noto Naskh Arabic", "Traditional Arabic", serif;">'
+        f"{text}"
+        "</div>"
+    )
 
 
 def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
@@ -589,12 +595,11 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                     interactive=False,
                     elem_id="uthmani_text",
                 )
+            with gr.Column(scale=2):
                 uthmani_display = gr.HTML(
                     label="Teks Rujukan (tampilan besar)",
                     elem_id="uthmani_display",
                 )
-
-            with gr.Column(scale=2):
                 audio_input = gr.Audio(
                     sources=["upload", "microphone"],
                     label="Unggah atau Rekam Audio",
@@ -689,8 +694,8 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
 
 
 def main(app=app):
-#    app.launch(server_name="0.0.0.0", share=False)
-    app.launch(server_name="0.0.0.0", share=True)
+    app.launch(server_name="0.0.0.0", share=False)
+#    app.launch(server_name="0.0.0.0", share=True)
 
 
 if __name__ == "__main__":
