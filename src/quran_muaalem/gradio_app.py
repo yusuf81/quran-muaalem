@@ -9,6 +9,9 @@ from quran_transcript.phonetics.moshaf_attributes import (
     get_arabic_attributes,
     get_arabic_name,
 )
+import numpy as np
+import matplotlib.pyplot as plt
+import librosa
 from librosa.core import load
 from pydantic.fields import FieldInfo, PydanticUndefined
 import torch
@@ -64,6 +67,54 @@ logging.basicConfig(level=logging.INFO)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 muaalem = Muaalem(model_name_or_path=model_id, device=device)
 sampling_rate = 16000
+
+
+def plot_waveform(wave: np.ndarray, sr: int, title: str):
+    """Return a matplotlib figure for waveform."""
+    fig, ax = plt.subplots(figsize=(8, 2))
+    times = np.arange(len(wave)) / sr
+    ax.plot(times, wave, linewidth=0.8, color="#2563eb")
+    ax.set_title(title)
+    ax.set_xlabel("Detik")
+    ax.set_ylabel("Amplitudo")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    fig.tight_layout()
+    return fig
+
+
+def preprocess_waveform(
+    wave: np.ndarray, sr: int, enable_preprocess: bool, enable_debug: bool
+):
+    """Optionally trim silence and apply simple VAD-like gating."""
+    debug_fig = None
+
+    if not enable_preprocess:
+        if enable_debug:
+            debug_fig = plot_waveform(wave, sr, "Waveform asli")
+        return wave, debug_fig
+
+    # Step 1: trim leading/trailing silence
+    trimmed_wave, _ = librosa.effects.trim(wave, top_db=25)
+    # Step 2: simple energy-based gate to reduce long quiet tails
+    if trimmed_wave.size > 0:
+        energy = np.abs(trimmed_wave)
+        mask = energy > (0.02 * energy.max())
+        if mask.any():
+            trimmed_wave = trimmed_wave[mask]
+
+    # Normalize level to avoid clipping
+    if trimmed_wave.size > 0:
+        max_val = np.max(np.abs(trimmed_wave))
+        if max_val > 0:
+            trimmed_wave = trimmed_wave / max_val * 0.95
+
+    if enable_debug:
+        before_fig = plot_waveform(wave, sr, "Waveform asli")
+        after_fig = plot_waveform(trimmed_wave, sr, "Waveform setelah pemrosesan")
+        return trimmed_wave, (before_fig, after_fig)
+
+    return trimmed_wave, plot_waveform(trimmed_wave, sr, "Waveform diproses")
 
 # Load Sura information
 sura_idx_to_name = {}
@@ -462,11 +513,23 @@ def update_uthmani_ref_html(sura_idx, aya_idx, start_idx, num_words):
     )
 
 
-def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
+def process_audio(
+    audio,
+    sura_idx,
+    aya_idx,
+    start_idx,
+    num_words,
+    enable_preprocess: bool,
+    enable_debug: bool,
+):
     global current_moshaf
 
     if audio is None:
-        return "Silakan unggah file audio terlebih dahulu"
+        return (
+            None,
+            None,
+            "Silakan unggah file audio terlebih dahulu",
+        )
 
     try:
         # Get Uthmani reference text
@@ -481,11 +544,11 @@ def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
 
         # Process audio
         wave, _ = load(audio, sr=sampling_rate, mono=True)
-        outs = muaalem(
-            [wave],
-            [phonetizer_out],
-            sampling_rate=sampling_rate,
+        processed_wave, debug_figs = preprocess_waveform(
+            wave, sampling_rate, enable_preprocess, enable_debug
         )
+
+        outs = muaalem([processed_wave], [phonetizer_out], sampling_rate=sampling_rate)
 
         # # Prepare output
         # output_text = f"Phonemes: {outs[0].phonemes}\n\n"
@@ -503,12 +566,32 @@ def process_audio(audio, sura_idx, aya_idx, start_idx, num_words):
             uthmani_ref,
         )
 
-        return explanation_html
+        # Decide waveform outputs
+        processed_plot = plot_waveform(
+            processed_wave, sampling_rate, "Waveform diproses"
+        )
+        if enable_debug and isinstance(debug_figs, tuple):
+            before_fig, after_fig = debug_figs
+            debug_plot = after_fig
+        elif enable_debug and debug_figs is not None:
+            debug_plot = debug_figs
+        else:
+            debug_plot = None
+
+        return processed_plot, debug_plot, explanation_html
 
     except PartOfUthmaniWord as e:
-        return f"⚠️ Peringatan: Rentang kata yang dipilih mencakup kata Utsmani sebagian. Silakan sesuaikan jumlah kata untuk hanya mencakup kata lengkap.\n\nDetail kesalahan: {str(e)}"
-    # except Exception as e:
-    #     return f"Kesalahan memproses audio: {str(e)}"
+        return (
+            None,
+            None,
+            f"⚠️ Peringatan: Rentang kata yang dipilih mencakup kata Utsmani sebagian. Silakan sesuaikan jumlah kata untuk hanya mencakup kata lengkap.\n\nDetail kesalahan: {str(e)}",
+        )
+    except Exception as e:
+        return (
+            None,
+            None,
+            f"Kesalahan memproses audio: {str(e)}",
+        )
 
 
 def update_moshaf_settings(*args):
@@ -600,6 +683,15 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                     label="Teks Rujukan (tampilan besar)",
                     elem_id="uthmani_display",
                 )
+                with gr.Row():
+                    preprocess_checkbox = gr.Checkbox(
+                        label="Aktifkan pemrosesan audio (trim keheningan/VAD ringan)",
+                        value=False,
+                    )
+                    debug_checkbox = gr.Checkbox(
+                        label="Tampilkan debug waveform",
+                        value=False,
+                    )
                 audio_input = gr.Audio(
                     sources=["upload", "microphone"],
                     label="Unggah atau Rekam Audio",
@@ -609,6 +701,8 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 analyze_btn = gr.Button(
                     "Periksa Bacaan", variant="primary", elem_id="analyze_btn"
                 )
+                processed_audio_waveform = gr.Plot(label="Waveform Audio (setelah pemrosesan)")
+                debug_waveform = gr.Plot(label="Waveform Debug (sebelum/sesudah pemrosesan)")
                 output_html = gr.HTML(
                     label="Hasil Pemeriksaan Bacaan",
                     elem_id="output_html",
@@ -654,8 +748,16 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
         # Process audio when button is clicked
         analyze_btn.click(
             process_audio,
-            inputs=[audio_input, sura_dropdown, aya_dropdown, start_idx, num_words],
-            outputs=output_html,
+            inputs=[
+                audio_input,
+                sura_dropdown,
+                aya_dropdown,
+                start_idx,
+                num_words,
+                preprocess_checkbox,
+                debug_checkbox,
+            ],
+            outputs=[processed_audio_waveform, debug_waveform, output_html],
         )
 
     with gr.Tab("Pengaturan Mushaf - Moshaf Settings"):
