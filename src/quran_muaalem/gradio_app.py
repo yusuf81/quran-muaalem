@@ -1,4 +1,5 @@
 import logging
+import os
 from dataclasses import asdict
 import json
 from typing import Literal, Optional, Any, get_origin, get_args
@@ -86,7 +87,7 @@ def plot_waveform(wave: np.ndarray, sr: int, title: str):
 def preprocess_waveform(
     wave: np.ndarray, sr: int, enable_preprocess: bool, enable_debug: bool
 ):
-    """Optionally trim silence and apply simple VAD-like gating."""
+    """Optionally trim keheningan."""
     debug_fig = None
 
     if not enable_preprocess:
@@ -94,14 +95,10 @@ def preprocess_waveform(
             debug_fig = plot_waveform(wave, sr, "Waveform asli")
         return wave, debug_fig
 
-    # Step 1: trim leading/trailing silence
+    # Trim leading/trailing silence
     trimmed_wave, _ = librosa.effects.trim(wave, top_db=25)
-    # Step 2: simple energy-based gate to reduce long quiet tails
-    if trimmed_wave.size > 0:
-        energy = np.abs(trimmed_wave)
-        mask = energy > (0.02 * energy.max())
-        if mask.any():
-            trimmed_wave = trimmed_wave[mask]
+    if trimmed_wave.size == 0:
+        trimmed_wave = wave
 
     # Normalize level to avoid clipping
     if trimmed_wave.size > 0:
@@ -115,6 +112,7 @@ def preprocess_waveform(
         return trimmed_wave, (before_fig, after_fig)
 
     return trimmed_wave, plot_waveform(trimmed_wave, sr, "Waveform diproses")
+
 
 # Load Sura information
 sura_idx_to_name = {}
@@ -484,15 +482,11 @@ def update_aya_dropdown(sura_idx):
     )
 
 
-def update_uthmani_ref(sura_idx, aya_idx, start_idx, num_words):
-    if not all([sura_idx, aya_idx, start_idx is not None, num_words is not None]):
+def update_uthmani_ref(sura_idx, aya_idx):
+    if not all([sura_idx, aya_idx]):
         return ""
     try:
-        uthmani_ref = (
-            Aya(int(sura_idx), int(aya_idx))
-            .get_by_imlaey_words(int(start_idx), int(num_words))
-            .uthmani
-        )
+        uthmani_ref = Aya(int(sura_idx), int(aya_idx)).get().uthmani
         return uthmani_ref
     except PartOfUthmaniWord as e:
         return f"⚠️ Peringatan: Anda telah memilih sebagian kata Utsmani. Silakan sesuaikan jumlah kata untuk hanya mencakup kata lengkap.\n\nDetail kesalahan: {str(e)}"
@@ -500,8 +494,8 @@ def update_uthmani_ref(sura_idx, aya_idx, start_idx, num_words):
         return f"Kesalahan: {str(e)}"
 
 
-def update_uthmani_ref_html(sura_idx, aya_idx, start_idx, num_words):
-    text = update_uthmani_ref(sura_idx, aya_idx, start_idx, num_words)
+def update_uthmani_ref_html(sura_idx, aya_idx):
+    text = update_uthmani_ref(sura_idx, aya_idx)
     if not text:
         return ""
     return (
@@ -517,8 +511,6 @@ def process_audio(
     audio,
     sura_idx,
     aya_idx,
-    start_idx,
-    num_words,
     enable_preprocess: bool,
     enable_debug: bool,
 ):
@@ -528,16 +520,13 @@ def process_audio(
         return (
             None,
             None,
+            None,
             "Silakan unggah file audio terlebih dahulu",
         )
 
     try:
         # Get Uthmani reference text
-        uthmani_ref = (
-            Aya(int(sura_idx), int(aya_idx))
-            .get_by_imlaey_words(int(start_idx), int(num_words))
-            .uthmani
-        )
+        uthmani_ref = Aya(int(sura_idx), int(aya_idx)).get().uthmani
         phonetizer_out = quran_phonetizer(
             uthmani_ref, current_moshaf, remove_spaces=True
         )
@@ -578,16 +567,18 @@ def process_audio(
         else:
             debug_plot = None
 
-        return processed_plot, debug_plot, explanation_html
+        return (sampling_rate, processed_wave), processed_plot, debug_plot, explanation_html
 
     except PartOfUthmaniWord as e:
         return (
+            None,
             None,
             None,
             f"⚠️ Peringatan: Rentang kata yang dipilih mencakup kata Utsmani sebagian. Silakan sesuaikan jumlah kata untuk hanya mencakup kata lengkap.\n\nDetail kesalahan: {str(e)}",
         )
     except Exception as e:
         return (
+            None,
             None,
             None,
             f"Kesalahan memproses audio: {str(e)}",
@@ -659,20 +650,6 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                     value=1,
                     elem_id="aya_dropdown",
                 )
-                start_idx = gr.Number(
-                    value=0,
-                    label="Nomor kata dimulai dari nol (Word Index)",
-                    minimum=0,
-                    step=1,
-                    elem_id="start_idx",
-                )
-                num_words = gr.Number(
-                    value=4,
-                    label="Jumlah kata",
-                    minimum=1,
-                    step=1,
-                    elem_id="num_words",
-                )
                 uthmani_text = gr.Textbox(
                     label="Tulisan Utsmani",
                     interactive=False,
@@ -685,7 +662,7 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 )
                 with gr.Row():
                     preprocess_checkbox = gr.Checkbox(
-                        label="Aktifkan pemrosesan audio (trim keheningan/VAD ringan)",
+                        label="Aktifkan pemrosesan audio (trim keheningan)",
                         value=False,
                     )
                     debug_checkbox = gr.Checkbox(
@@ -701,6 +678,11 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 analyze_btn = gr.Button(
                     "Periksa Bacaan", variant="primary", elem_id="analyze_btn"
                 )
+                processed_audio_player = gr.Audio(
+                    label="Audio hasil pemrosesan",
+                    interactive=False,
+                    type="numpy",
+                )
                 processed_audio_waveform = gr.Plot(label="Waveform Audio (setelah pemrosesan)")
                 debug_waveform = gr.Plot(label="Waveform Debug (sebelum/sesudah pemrosesan)")
                 output_html = gr.HTML(
@@ -711,12 +693,12 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
         # Initial update of uthmani text
         app.load(
             update_uthmani_ref,
-            inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+            inputs=[sura_dropdown, aya_dropdown],
             outputs=uthmani_text,
         )
         app.load(
             update_uthmani_ref_html,
-            inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+            inputs=[sura_dropdown, aya_dropdown],
             outputs=uthmani_display,
         )
 
@@ -725,23 +707,23 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
             update_aya_dropdown, inputs=sura_dropdown, outputs=aya_dropdown
         ).then(
             update_uthmani_ref,
-            inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+            inputs=[sura_dropdown, aya_dropdown],
             outputs=uthmani_text,
         ).then(
             update_uthmani_ref_html,
-            inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+            inputs=[sura_dropdown, aya_dropdown],
             outputs=uthmani_display,
         )
 
         # Update uthmani text when any parameter changes
-        for component in [aya_dropdown, start_idx, num_words]:
+        for component in [aya_dropdown]:
             component.change(
                 update_uthmani_ref,
-                inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+                inputs=[sura_dropdown, aya_dropdown],
                 outputs=uthmani_text,
             ).then(
                 update_uthmani_ref_html,
-                inputs=[sura_dropdown, aya_dropdown, start_idx, num_words],
+                inputs=[sura_dropdown, aya_dropdown],
                 outputs=uthmani_display,
             )
 
@@ -752,12 +734,15 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 audio_input,
                 sura_dropdown,
                 aya_dropdown,
-                start_idx,
-                num_words,
                 preprocess_checkbox,
                 debug_checkbox,
             ],
-            outputs=[processed_audio_waveform, debug_waveform, output_html],
+            outputs=[
+                processed_audio_player,
+                processed_audio_waveform,
+                debug_waveform,
+                output_html,
+            ],
         )
 
     with gr.Tab("Pengaturan Mushaf - Moshaf Settings"):
@@ -796,7 +781,8 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
 
 
 def main(app=app):
-    app.launch(server_name="0.0.0.0", share=False)
+    root_path = os.environ.get("GRADIO_ROOT_PATH", "/ngaji7")
+    app.launch(server_name="0.0.0.0", share=False, root_path=root_path)
 #    app.launch(server_name="0.0.0.0", share=True)
 
 
