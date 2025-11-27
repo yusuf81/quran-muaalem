@@ -719,6 +719,10 @@ def process_multi_verse_audio(
 
                 html_output += f"<div style='border:1px solid #e5e7eb; margin-bottom:20px; padding:15px; border-radius:8px; background-color: white;'>"
                 html_output += f"<h4 style='margin-top:0;'>Ayat {current_aya_idx} <span style='font-weight:normal; font-size:0.9em; color:#666'>(Detik: {start_sec:.2f} - {end_sec:.2f})</span></h4>"
+                
+                # Display Utsmani text for reading
+                html_output += f"<div style='font-size: 28px; line-height: 1.7; text-align: center; direction: rtl; font-family: \"Scheherazade New\", \"Amiri\", \"Noto Naskh Arabic\", \"Traditional Arabic\", serif; padding: 15px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 15px;'>{uthmani_ref}</div>"
+                
                 html_output += explanation
                 html_output += "</div>"
 
@@ -763,6 +767,55 @@ def reset_settings():
         return [getattr(current_moshaf, field_name) for field_name in field_names] + [
             f"❌ Error resetting settings: {str(e)}"
         ]
+
+
+def update_multi_verse_uthmani_preview(sura_idx, start_aya, end_aya, full_sura_toggle):
+    """Generate HTML preview of Quran text for multi-verse analysis"""
+    if not sura_idx:
+        return ""
+    
+    # Determine verses to display
+    if full_sura_toggle:
+        start_aya = 1
+        end_aya = sura_to_aya_count[int(sura_idx)]
+    
+    try:
+        start_aya = int(start_aya)
+        end_aya = int(end_aya)
+        
+        if start_aya > end_aya:
+            return "<div style='color: red;'>Ayat awal harus lebih kecil atau sama dengan ayat akhir.</div>"
+        
+        # Limit preview to reasonable number of verses
+        max_preview = 20
+        verses_html = ""
+        
+        if end_aya - start_aya + 1 > max_preview:
+            verses_html += f"<div style='padding: 10px; background-color: #fff3cd; color: #856404; border-radius: 5px; margin-bottom: 10px;'>⚠️ Menampilkan {max_preview} ayat pertama dari total {end_aya - start_aya + 1} ayat yang dipilih.</div>"
+            display_end = start_aya + max_preview - 1
+        else:
+            display_end = end_aya
+        
+        for aya_num in range(start_aya, display_end + 1):
+            try:
+                uthmani_ref = Aya(int(sura_idx), aya_num).get().uthmani
+                verses_html += f"""
+                <div style='margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;'>
+                    <div style='font-size: 14px; font-weight: bold; color: #666; margin-bottom: 5px;'>Ayat {aya_num}</div>
+                    <div style='font-size: 24px; line-height: 1.7; text-align: center; direction: rtl; font-family: "Scheherazade New", "Amiri", "Noto Naskh Arabic", "Traditional Arabic", serif;'>{uthmani_ref}</div>
+                </div>
+                """
+            except Exception as e:
+                verses_html += f"<div style='color: red;'>Error loading Ayat {aya_num}: {str(e)}</div>"
+        
+        if end_aya - start_aya + 1 > max_preview:
+            verses_html += f"<div style='text-align: center; color: #666; font-style: italic;'>... dan {end_aya - display_end} ayat lainnya</div>"
+        
+        header = f"<h3>{sura_idx_to_name[int(sura_idx)]}: Ayat {start_aya}-{end_aya}</h3>"
+        return header + verses_html
+        
+    except Exception as e:
+        return f"<div style='color: red;'>Error: {str(e)}</div>"
 
 
 # Create the Gradio app
@@ -929,10 +982,23 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 mv_analyze_btn = gr.Button(
                     "Mulai Analisis Multi-Ayat", variant="primary"
                 )
+                # Add preview of Quran text before analysis
+                mv_uthmani_preview = gr.HTML(
+                    label="Teks Rujukan Ayat (untuk dibaca)",
+                    elem_id="mv_uthmani_preview",
+                )
                 mv_output_html = gr.HTML(
                     label="Hasil Pemeriksaan",
                     elem_id="mv_output_html",
                 )
+        
+        # Initial load of preview
+        app.load(
+            update_multi_verse_uthmani_preview,
+            inputs=[mv_sura_dropdown, mv_start_aya, mv_end_aya, mv_full_sura_toggle],
+            outputs=[mv_uthmani_preview],
+        )
+
 
         # Logic for full sura toggle
         def toggle_aya_inputs(is_full, sura_idx):
@@ -954,6 +1020,10 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
             toggle_aya_inputs,
             inputs=[mv_full_sura_toggle, mv_sura_dropdown],
             outputs=[mv_start_aya, mv_end_aya],
+        ).then(
+            update_multi_verse_uthmani_preview,
+            inputs=[mv_sura_dropdown, mv_start_aya, mv_end_aya, mv_full_sura_toggle],
+            outputs=[mv_uthmani_preview],
         )
         
         # Also update when sura changes and full sura is checked
@@ -961,7 +1031,19 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
             toggle_aya_inputs,
             inputs=[mv_full_sura_toggle, mv_sura_dropdown],
             outputs=[mv_start_aya, mv_end_aya],
+        ).then(
+            update_multi_verse_uthmani_preview,
+            inputs=[mv_sura_dropdown, mv_start_aya, mv_end_aya, mv_full_sura_toggle],
+            outputs=[mv_uthmani_preview],
         )
+        
+        # Update preview when aya numbers change
+        for component in [mv_start_aya, mv_end_aya]:
+            component.change(
+                update_multi_verse_uthmani_preview,
+                inputs=[mv_sura_dropdown, mv_start_aya, mv_end_aya, mv_full_sura_toggle],
+                outputs=[mv_uthmani_preview],
+            )
 
         mv_analyze_btn.click(
             process_multi_verse_audio,
