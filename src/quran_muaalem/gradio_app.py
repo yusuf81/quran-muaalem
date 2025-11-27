@@ -17,11 +17,23 @@ from librosa.core import load
 from pydantic.fields import FieldInfo, PydanticUndefined
 import torch
 import gradio as gr
+import torchaudio
+
+# Monkey patch for recitations-segmenter compatibility with newer torchaudio
+if not hasattr(torchaudio, "list_audio_backends"):
+    def list_audio_backends():
+        return ["soundfile"]
+    torchaudio.list_audio_backends = list_audio_backends
 
 from quran_muaalem.inference import Muaalem
 from quran_muaalem.muaalem_typing import MuaalemOutput
 from quran_muaalem.explain import explain_for_terminal
 from quran_muaalem.explain_gradio import explain_for_gradio
+
+# Recitations Segmenter Imports
+from transformers import AutoFeatureExtractor, AutoModelForAudioFrameClassification
+from recitations_segmenter import segment_recitations, read_audio, clean_speech_intervals
+
 
 # Initialize components
 REQUIRED_MOSHAF_FIELDS = [
@@ -96,7 +108,15 @@ def preprocess_waveform(
         return wave, debug_fig
 
     # Trim leading/trailing silence
-    trimmed_wave, _ = librosa.effects.trim(wave, top_db=25)
+    _, (start_idx, end_idx) = librosa.effects.trim(wave, top_db=25)
+    
+    # Add 1 second padding (if available)
+    padding = sr  # 1 second * sample rate
+    start_idx = max(0, start_idx - padding)
+    end_idx = min(len(wave), end_idx + padding)
+    
+    trimmed_wave = wave[start_idx:end_idx]
+    
     if trimmed_wave.size == 0:
         trimmed_wave = wave
 
@@ -574,15 +594,141 @@ def process_audio(
             None,
             None,
             None,
-            f"⚠️ Peringatan: Rentang kata yang dipilih mencakup kata Utsmani sebagian. Silakan sesuaikan jumlah kata untuk hanya mencakup kata lengkap.\n\nDetail kesalahan: {str(e)}",
-        )
-    except Exception as e:
-        return (
-            None,
-            None,
-            None,
             f"Kesalahan memproses audio: {str(e)}",
         )
+
+
+# Initialize segmenter components lazily
+segmenter_model = None
+segmenter_processor = None
+segmenter_model_id = "obadx/recitation-segmenter-v2"
+
+
+def load_segmenter():
+    global segmenter_model, segmenter_processor
+    if segmenter_model is None:
+        print("Loading Recitation Segmenter...")
+        segmenter_processor = AutoFeatureExtractor.from_pretrained(segmenter_model_id)
+        segmenter_model = AutoModelForAudioFrameClassification.from_pretrained(
+            segmenter_model_id
+        )
+        segmenter_model.to(device, dtype=torch.bfloat16)
+        print("Recitation Segmenter Loaded.")
+
+
+def process_multi_verse_audio(
+    audio,
+    sura_idx,
+    start_aya,
+    end_aya,
+    full_sura_toggle,
+    enable_preprocess,
+):
+    global current_moshaf
+
+    if audio is None:
+        return "Silakan unggah file audio terlebih dahulu"
+
+    load_segmenter()
+
+    # Determine verses to process
+    if full_sura_toggle:
+        start_aya = 1
+        end_aya = sura_to_aya_count[int(sura_idx)]
+
+    start_aya = int(start_aya)
+    end_aya = int(end_aya)
+
+    if start_aya > end_aya:
+        return "Ayat awal harus lebih kecil atau sama dengan ayat akhir."
+
+    try:
+        # Process audio for segmentation
+        wave = read_audio(audio)
+
+        # Segment
+        sampled_outputs = segment_recitations(
+            [wave],
+            segmenter_model,
+            segmenter_processor,
+            device=device,
+            dtype=torch.bfloat16,
+            batch_size=1,
+        )
+
+        output = sampled_outputs[0]
+
+        clean_out = clean_speech_intervals(
+            output.speech_intervals,
+            output.is_complete,
+            min_silence_duration_ms=200,
+            min_speech_duration_ms=500,
+            pad_duration_ms=0,
+            return_seconds=True,
+        )
+
+        segments = clean_out.clean_speech_intervals
+        
+        expected_verses_count = end_aya - start_aya + 1
+        detected_segments_count = len(segments)
+
+        html_output = f"<h3>Hasil Analisis (Surah {sura_idx_to_name[int(sura_idx)]}: {start_aya}-{end_aya})</h3>"
+        html_output += f"<p>Jumlah ayat diharapkan: {expected_verses_count}, Jumlah segmen terdeteksi: {detected_segments_count}</p>"
+
+        if detected_segments_count != expected_verses_count:
+            html_output += f"<div style='padding: 10px; background-color: #fff3cd; color: #856404; border-radius: 5px; margin-bottom: 10px;'>⚠️ Peringatan: Jumlah segmen ({detected_segments_count}) tidak sesuai dengan jumlah ayat ({expected_verses_count}). Pemetaan mungkin tidak akurat. Pastikan Anda berhenti sejenak di setiap akhir ayat.</div>"
+
+        # Load original full audio for slicing
+        full_wave, _ = load(audio, sr=sampling_rate, mono=True)
+
+        # Process each segment
+        for i in range(min(expected_verses_count, detected_segments_count)):
+            current_aya_idx = start_aya + i
+            segment = segments[i]
+            start_sec, end_sec = segment[0], segment[1]
+
+            # Slice audio with small padding
+            pad_samples = int(0.5 * sampling_rate)
+            start_sample = max(0, int(start_sec * sampling_rate) - pad_samples)
+            end_sample = min(len(full_wave), int(end_sec * sampling_rate) + pad_samples)
+
+            aya_wave = full_wave[start_sample:end_sample]
+
+            try:
+                uthmani_ref = Aya(int(sura_idx), int(current_aya_idx)).get().uthmani
+                phonetizer_out = quran_phonetizer(
+                    uthmani_ref, current_moshaf, remove_spaces=True
+                )
+
+                # Preprocess (trim silence)
+                processed_wave, _ = preprocess_waveform(
+                    aya_wave, sampling_rate, enable_preprocess, False
+                )
+
+                outs = muaalem(
+                    [processed_wave], [phonetizer_out], sampling_rate=sampling_rate
+                )
+
+                explanation = explain_for_gradio(
+                    outs[0].phonemes.text,
+                    phonetizer_out.phonemes,
+                    outs[0].sifat,
+                    phonetizer_out.sifat,
+                    uthmani_ref,
+                )
+
+                html_output += f"<div style='border:1px solid #e5e7eb; margin-bottom:20px; padding:15px; border-radius:8px; background-color: white;'>"
+                html_output += f"<h4 style='margin-top:0;'>Ayat {current_aya_idx} <span style='font-weight:normal; font-size:0.9em; color:#666'>(Detik: {start_sec:.2f} - {end_sec:.2f})</span></h4>"
+                html_output += explanation
+                html_output += "</div>"
+
+            except Exception as e:
+                html_output += f"<div style='color:red; margin: 10px 0;'>Error processing Ayat {current_aya_idx}: {str(e)}</div>"
+        
+        return html_output
+
+    except Exception as e:
+        return f"Gagal memproses audio: {str(e)}"
 
 
 def update_moshaf_settings(*args):
@@ -743,6 +889,91 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 debug_waveform,
                 output_html,
             ],
+        )
+
+    with gr.Tab("Analisis Banyak Ayat / Full Surah"):
+        gr.Markdown("# Analisis Banyak Ayat / Full Surah")
+        gr.Markdown(
+            "Analisis bacaan untuk beberapa ayat sekaligus atau satu surat penuh. Pastikan Anda berhenti sejenak (waqf) di setiap akhir ayat agar sistem dapat memisahkan ayat dengan benar."
+        )
+
+        with gr.Row():
+            with gr.Column(scale=1):
+                mv_sura_dropdown = gr.Dropdown(
+                    choices=sura_choices,
+                    label="Surah",
+                    value=1,
+                    elem_id="mv_sura_dropdown",
+                )
+                
+                with gr.Row():
+                    mv_start_aya = gr.Number(label="Ayat Awal", value=1, precision=0)
+                    mv_end_aya = gr.Number(label="Ayat Akhir", value=5, precision=0)
+                
+                mv_full_sura_toggle = gr.Checkbox(
+                    label="Analisis Full Surah", value=False
+                )
+                
+                mv_preprocess_checkbox = gr.Checkbox(
+                    label="Aktifkan pemrosesan audio (trim keheningan per segmen)",
+                    value=True,
+                )
+
+            with gr.Column(scale=2):
+                mv_audio_input = gr.Audio(
+                    sources=["upload", "microphone"],
+                    label="Unggah atau Rekam Audio (Bacaan Panjang)",
+                    type="filepath",
+                    elem_id="mv_audio_input",
+                )
+                mv_analyze_btn = gr.Button(
+                    "Mulai Analisis Multi-Ayat", variant="primary"
+                )
+                mv_output_html = gr.HTML(
+                    label="Hasil Pemeriksaan",
+                    elem_id="mv_output_html",
+                )
+
+        # Logic for full sura toggle
+        def toggle_aya_inputs(is_full, sura_idx):
+            if is_full:
+                # When full sura is checked, set to 1 and total ayas, and disable
+                total_ayas = sura_to_aya_count[int(sura_idx)]
+                return {
+                    mv_start_aya: gr.update(value=1, interactive=False),
+                    mv_end_aya: gr.update(value=total_ayas, interactive=False),
+                }
+            else:
+                # When unchecked, just enable the fields (keep current values)
+                return {
+                    mv_start_aya: gr.update(interactive=True),
+                    mv_end_aya: gr.update(interactive=True),
+                }
+
+        mv_full_sura_toggle.change(
+            toggle_aya_inputs,
+            inputs=[mv_full_sura_toggle, mv_sura_dropdown],
+            outputs=[mv_start_aya, mv_end_aya],
+        )
+        
+        # Also update when sura changes and full sura is checked
+        mv_sura_dropdown.change(
+            toggle_aya_inputs,
+            inputs=[mv_full_sura_toggle, mv_sura_dropdown],
+            outputs=[mv_start_aya, mv_end_aya],
+        )
+
+        mv_analyze_btn.click(
+            process_multi_verse_audio,
+            inputs=[
+                mv_audio_input,
+                mv_sura_dropdown,
+                mv_start_aya,
+                mv_end_aya,
+                mv_full_sura_toggle,
+                mv_preprocess_checkbox,
+            ],
+            outputs=[mv_output_html],
         )
 
     with gr.Tab("Pengaturan Mushaf - Moshaf Settings"):

@@ -3,6 +3,7 @@ import logging
 from quran_transcript import chunck_phonemes, QuranPhoneticScriptOutput
 from transformers import AutoFeatureExtractor
 import torch
+import numpy as np
 from numpy.typing import NDArray
 
 from .modeling.multi_level_tokenizer import MultiLevelTokenizer
@@ -138,8 +139,11 @@ class Muaalem:
             padding="longest",
         )["input_ids"]
 
+        # Convert numpy arrays to native Python lists to avoid dtype inference issues
+        waves_as_lists = [[float(x) for x in wave] if isinstance(wave, (list, np.ndarray)) else wave for wave in waves]
+        
         features = self.processor(
-            waves, sampling_rate=sampling_rate, return_tensors="pt"
+            raw_speech=waves_as_lists, sampling_rate=sampling_rate, return_tensors="pt", padding=True
         )
         features = {k: v.to(self.device, dtype=self.dtype) for k, v in features.items()}
         outs = self.model(**features, return_dict=False)[0]

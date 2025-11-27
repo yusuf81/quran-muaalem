@@ -5,7 +5,6 @@ from transformers.models.wav2vec2_bert.modeling_wav2vec2_bert import (
     Wav2Vec2BertModel,
     _HIDDEN_STATES_START_POSITION,
 )
-from transformers.utils import auto_docstring
 from transformers.modeling_outputs import CausalLMOutput
 import torch
 from torch import nn
@@ -44,7 +43,6 @@ class Wav2Vec2BertForMultilevelCTC(Wav2Vec2BertPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
-    @auto_docstring
     def forward(
         self,
         input_features: Optional[torch.Tensor],
