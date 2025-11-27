@@ -539,8 +539,6 @@ def process_audio(
     if audio is None:
         return (
             None,
-            None,
-            None,
             "Silakan unggah file audio terlebih dahulu",
         )
 
@@ -559,13 +557,6 @@ def process_audio(
 
         outs = muaalem([processed_wave], [phonetizer_out], sampling_rate=sampling_rate)
 
-        # # Prepare output
-        # output_text = f"Phonemes: {outs[0].phonemes}\n\n"
-        # for sifa in outs[0].sifat:
-        #     output_text += json.dumps(asdict(sifa), indent=2, ensure_ascii=False) + "\n"
-        #     output_text += "*" * 30 + "\n"
-        # output_text += "-" * 40 + "\n\n"
-
         # Add explanation
         explanation_html = explain_for_gradio(
             outs[0].phonemes.text,
@@ -575,10 +566,7 @@ def process_audio(
             uthmani_ref,
         )
 
-        # Decide waveform outputs
-        processed_plot = plot_waveform(
-            processed_wave, sampling_rate, "Waveform diproses"
-        )
+        # Decide waveform outputs for debug
         if enable_debug and isinstance(debug_figs, tuple):
             before_fig, after_fig = debug_figs
             debug_plot = after_fig
@@ -587,12 +575,10 @@ def process_audio(
         else:
             debug_plot = None
 
-        return (sampling_rate, processed_wave), processed_plot, debug_plot, explanation_html
+        return debug_plot, explanation_html
 
     except PartOfUthmaniWord as e:
         return (
-            None,
-            None,
             None,
             f"Kesalahan memproses audio: {str(e)}",
         )
@@ -877,13 +863,8 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 analyze_btn = gr.Button(
                     "Periksa Bacaan", variant="primary", elem_id="analyze_btn"
                 )
-                processed_audio_player = gr.Audio(
-                    label="Audio hasil pemrosesan",
-                    interactive=False,
-                    type="numpy",
-                )
-                processed_audio_waveform = gr.Plot(label="Waveform Audio (setelah pemrosesan)")
-                debug_waveform = gr.Plot(label="Waveform Debug (sebelum/sesudah pemrosesan)")
+
+                debug_waveform = gr.Plot(label="Waveform Debug (sebelum/sesudah pemrosesan)", visible=False)
                 output_html = gr.HTML(
                     label="Hasil Pemeriksaan Bacaan",
                     elem_id="output_html",
@@ -926,6 +907,13 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 outputs=uthmani_display,
             )
 
+        # Show/hide debug waveform based on checkbox
+        debug_checkbox.change(
+            lambda checked: gr.update(visible=checked),
+            inputs=[debug_checkbox],
+            outputs=[debug_waveform],
+        )
+
         # Process audio when button is clicked
         analyze_btn.click(
             process_audio,
@@ -937,8 +925,6 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 debug_checkbox,
             ],
             outputs=[
-                processed_audio_player,
-                processed_audio_waveform,
                 debug_waveform,
                 output_html,
             ],
