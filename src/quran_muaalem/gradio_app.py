@@ -840,20 +840,21 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                     interactive=False,
                     elem_id="uthmani_text",
                 )
+                
+                preprocess_checkbox = gr.Checkbox(
+                    label="Aktifkan pemrosesan audio (trim keheningan)",
+                    value=False,
+                )
+                debug_checkbox = gr.Checkbox(
+                    label="Tampilkan debug waveform",
+                    value=False,
+                )
+                
             with gr.Column(scale=2):
                 uthmani_display = gr.HTML(
                     label="Teks Rujukan (tampilan besar)",
                     elem_id="uthmani_display",
                 )
-                with gr.Row():
-                    preprocess_checkbox = gr.Checkbox(
-                        label="Aktifkan pemrosesan audio (trim keheningan)",
-                        value=False,
-                    )
-                    debug_checkbox = gr.Checkbox(
-                        label="Tampilkan debug waveform",
-                        value=False,
-                    )
                 audio_input = gr.Audio(
                     sources=["upload", "microphone"],
                     label="Unggah atau Rekam Audio",
