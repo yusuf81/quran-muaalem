@@ -29,10 +29,20 @@ from quran_muaalem.inference import Muaalem
 from quran_muaalem.muaalem_typing import MuaalemOutput
 from quran_muaalem.explain import explain_for_terminal
 from quran_muaalem.explain_gradio import explain_for_gradio
+from quran_muaalem.exceptions import (
+    AudioProcessingError,
+    ModelInferenceError,
+    SegmentationError,
+    ValidationError,
+    ModelLoadError,
+)
+from quran_muaalem.utils.error_handler import create_error_response, log_and_return_error
+from quran_muaalem.services.model_manager import ModelManager
 
 # Recitations Segmenter Imports
 from transformers import AutoFeatureExtractor, AutoModelForAudioFrameClassification
 from recitations_segmenter import segment_recitations, read_audio, clean_speech_intervals
+
 
 
 # Initialize components
@@ -75,11 +85,22 @@ REQUIRED_MOSHAF_FIELDS = [
     "raa_yasr",
     "meem_mokhfah",
 ]
-model_id = "obadx/muaalem-model-v3_2"
-logging.basicConfig(level=logging.INFO)
+# Configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
-muaalem = Muaalem(model_name_or_path=model_id, device=device)
 sampling_rate = 16000
+
+# Initialize model manager for lazy loading
+model_manager = ModelManager(
+    device=device,
+    muaalem_model_id="obadx/muaalem-model-v3_2",
+    segmenter_model_id="obadx/recitation-segmenter-v2"
+)
 
 
 def plot_waveform(wave: np.ndarray, sr: int, title: str):
@@ -151,9 +172,6 @@ default_moshaf = MoshafAttributes(
     madd_mottasel_waqf=4,
     madd_aared_len=4,
 )
-
-# Current moshaf settings (will be updated from settings page)
-current_moshaf = default_moshaf
 
 
 def get_field_name(field_name: str, field_info: FieldInfo) -> str:
@@ -533,29 +551,67 @@ def process_audio(
     aya_idx,
     enable_preprocess: bool,
     enable_debug: bool,
+    moshaf: MoshafAttributes,
 ):
-    global current_moshaf
-
+    """Process single verse audio with analysis.
+    
+    Args:
+        audio: Audio file path
+        sura_idx: Surah index
+        aya_idx: Ayah index
+        enable_preprocess: Whether to enable audio preprocessing
+        enable_debug: Whether to show debug waveforms
+        moshaf: MoshafAttributes for phonetizer
+    """
     if audio is None:
         return (
             None,
-            "Silakan unggah file audio terlebih dahulu",
+            create_error_response(
+                "Audio Tidak Ditemukan",
+                suggestion="Silakan unggah file audio atau rekam audio terlebih dahulu"
+            ),
         )
 
     try:
+        # Validate inputs
+        if not sura_idx or not aya_idx:
+            raise ValidationError("Surah dan ayat harus dipilih")
+
         # Get Uthmani reference text
-        uthmani_ref = Aya(int(sura_idx), int(aya_idx)).get().uthmani
+        try:
+            uthmani_ref = Aya(int(sura_idx), int(aya_idx)).get().uthmani
+        except PartOfUthmaniWord as e:
+            raise ValidationError(
+                f"Pilihan ayat tidak valid: {str(e)}. "
+                "Pastikan Anda memilih kata lengkap, bukan sebagian kata."
+            )
+
         phonetizer_out = quran_phonetizer(
-            uthmani_ref, current_moshaf, remove_spaces=True
+            uthmani_ref, moshaf, remove_spaces=True
         )
 
         # Process audio
-        wave, _ = load(audio, sr=sampling_rate, mono=True)
+        try:
+            wave, _ = load(audio, sr=sampling_rate, mono=True)
+        except Exception as e:
+            raise AudioProcessingError(
+                f"Gagal memuat file audio: {str(e)}. "
+                "Pastikan file dalam format yang didukung (WAV, MP3, dll.)"
+            )
+
         processed_wave, debug_figs = preprocess_waveform(
             wave, sampling_rate, enable_preprocess, enable_debug
         )
 
-        outs = muaalem([processed_wave], [phonetizer_out], sampling_rate=sampling_rate)
+        # Model inference
+        try:
+            outs = model_manager.muaalem([processed_wave], [phonetizer_out], sampling_rate=sampling_rate)
+        except ModelLoadError as e:
+            raise ModelInferenceError(f"Gagal memuat model: {str(e)}")
+        except Exception as e:
+            raise ModelInferenceError(
+                f"Model gagal menganalisis audio: {str(e)}"
+            )
 
         # Add explanation
         explanation_html = explain_for_gradio(
@@ -577,29 +633,49 @@ def process_audio(
 
         return debug_plot, explanation_html
 
-    except PartOfUthmaniWord as e:
+    except ValidationError as e:
         return (
             None,
-            f"Kesalahan memproses audio: {str(e)}",
+            log_and_return_error(
+                e, 
+                "Validasi Gagal",
+                suggestion="Periksa kembali pilihan surah dan ayat Anda",
+                log_level="warning"
+            )
+        )
+    
+    except AudioProcessingError as e:
+        return (
+            None,
+            log_and_return_error(
+                e,
+                "Gagal Memproses Audio",
+                suggestion="Pastikan file audio valid dan tidak corrupt"
+            )
+        )
+    
+    except ModelInferenceError as e:
+        return (
+            None,
+            log_and_return_error(
+                e,
+                "Gagal Melakukan Analisis",
+                suggestion="Coba dengan audio yang lebih jelas atau hubungi support"
+            )
+        )
+    
+    except Exception as e:
+        return (
+            None,
+            log_and_return_error(
+                e,
+                "Terjadi Kesalahan Tidak Terduga",
+                suggestion="Silakan coba lagi atau laporkan masalah ini"
+            )
         )
 
 
-# Initialize segmenter components lazily
-segmenter_model = None
-segmenter_processor = None
-segmenter_model_id = "obadx/recitation-segmenter-v2"
 
-
-def load_segmenter():
-    global segmenter_model, segmenter_processor
-    if segmenter_model is None:
-        print("Loading Recitation Segmenter...")
-        segmenter_processor = AutoFeatureExtractor.from_pretrained(segmenter_model_id)
-        segmenter_model = AutoModelForAudioFrameClassification.from_pretrained(
-            segmenter_model_id
-        )
-        segmenter_model.to(device, dtype=torch.bfloat16)
-        print("Recitation Segmenter Loaded.")
 
 
 def process_multi_verse_audio(
@@ -609,38 +685,75 @@ def process_multi_verse_audio(
     end_aya,
     full_sura_toggle,
     enable_preprocess,
+    moshaf: MoshafAttributes,
 ):
-    global current_moshaf
-
+    """Process multi-verse audio with automatic segmentation.
+    
+    Args:
+        audio: Audio file path
+        sura_idx: Surah index
+        start_aya: Start ayah number
+        end_aya: End ayah number
+        full_sura_toggle: Whether to analyze full surah
+        enable_preprocess: Whether to enable preprocessing
+        moshaf: MoshafAttributes for phonetizer
+    """
     if audio is None:
-        return "Silakan unggah file audio terlebih dahulu"
-
-    load_segmenter()
-
-    # Determine verses to process
-    if full_sura_toggle:
-        start_aya = 1
-        end_aya = sura_to_aya_count[int(sura_idx)]
-
-    start_aya = int(start_aya)
-    end_aya = int(end_aya)
-
-    if start_aya > end_aya:
-        return "Ayat awal harus lebih kecil atau sama dengan ayat akhir."
+        return create_error_response(
+            "Audio Tidak Ditemukan",
+            suggestion="Silakan unggah file audio untuk analisis multi-ayat"
+        )
 
     try:
+        # Load segmenter model
+        try:
+            segmenter_model, segmenter_processor = model_manager.segmenter
+        except ModelLoadError as e:
+            raise ModelInferenceError(f"Gagal memuat model segmentasi: {str(e)}")
+
+        # Validate and determine verses to process
+        if not sura_idx:
+            raise ValidationError("Surah harus dipilih")
+
+        if full_sura_toggle:
+            start_aya = 1
+            end_aya = sura_to_aya_count[int(sura_idx)]
+        
+        try:
+            start_aya = int(start_aya)
+            end_aya = int(end_aya)
+        except (ValueError, TypeError) as e:
+            raise ValidationError(f"Nomor ayat tidak valid: {str(e)}")
+
+        if start_aya > end_aya:
+            raise ValidationError(
+                f"Ayat awal ({start_aya}) harus lebih kecil atau sama dengan ayat akhir ({end_aya})"
+            )
+        
+        if start_aya < 1 or end_aya > sura_to_aya_count[int(sura_idx)]:
+            raise ValidationError(
+                f"Rentang ayat tidak valid. Surah {sura_idx_to_name[int(sura_idx)]} "
+                f"memiliki {sura_to_aya_count[int(sura_idx)]} ayat"
+            )
+
         # Process audio for segmentation
-        wave = read_audio(audio)
+        try:
+            wave = read_audio(audio)
+        except Exception as e:
+            raise AudioProcessingError(f"Gagal membaca file audio: {str(e)}")
 
         # Segment
-        sampled_outputs = segment_recitations(
-            [wave],
-            segmenter_model,
-            segmenter_processor,
-            device=device,
-            dtype=torch.bfloat16,
-            batch_size=1,
-        )
+        try:
+            sampled_outputs = segment_recitations(
+                [wave],
+                segmenter_model,
+                segmenter_processor,
+                device=device,
+                dtype=torch.bfloat16,
+                batch_size=1,
+            )
+        except Exception as e:
+            raise SegmentationError(f"Gagal melakukan segmentasi audio: {str(e)}")
 
         output = sampled_outputs[0]
 
@@ -662,10 +775,18 @@ def process_multi_verse_audio(
         html_output += f"<p>Jumlah ayat diharapkan: {expected_verses_count}, Jumlah segmen terdeteksi: {detected_segments_count}</p>"
 
         if detected_segments_count != expected_verses_count:
-            html_output += f"<div style='padding: 10px; background-color: #fff3cd; color: #856404; border-radius: 5px; margin-bottom: 10px;'>⚠️ Peringatan: Jumlah segmen ({detected_segments_count}) tidak sesuai dengan jumlah ayat ({expected_verses_count}). Pemetaan mungkin tidak akurat. Pastikan Anda berhenti sejenak di setiap akhir ayat.</div>"
+            html_output += create_error_response(
+                "Peringatan: Ketidakcocokan Segmentasi",
+                details=f"Jumlah segmen ({detected_segments_count}) tidak sesuai dengan jumlah ayat ({expected_verses_count})",
+                suggestion="Pastikan Anda berhenti sejenak (waqf) di setiap akhir ayat agar sistem dapat memisahkan dengan benar",
+                error_type="warning"
+            )
 
         # Load original full audio for slicing
-        full_wave, _ = load(audio, sr=sampling_rate, mono=True)
+        try:
+            full_wave, _ = load(audio, sr=sampling_rate, mono=True)
+        except Exception as e:
+            raise AudioProcessingError(f"Gagal memuat audio untuk processing: {str(e)}")
 
         # Process each segment
         for i in range(min(expected_verses_count, detected_segments_count)):
@@ -683,7 +804,7 @@ def process_multi_verse_audio(
             try:
                 uthmani_ref = Aya(int(sura_idx), int(current_aya_idx)).get().uthmani
                 phonetizer_out = quran_phonetizer(
-                    uthmani_ref, current_moshaf, remove_spaces=True
+                    uthmani_ref, moshaf, remove_spaces=True
                 )
 
                 # Preprocess (trim silence)
@@ -691,7 +812,7 @@ def process_multi_verse_audio(
                     aya_wave, sampling_rate, enable_preprocess, False
                 )
 
-                outs = muaalem(
+                outs = model_manager.muaalem(
                     [processed_wave], [phonetizer_out], sampling_rate=sampling_rate
                 )
 
@@ -713,46 +834,89 @@ def process_multi_verse_audio(
                 html_output += "</div>"
 
             except Exception as e:
-                html_output += f"<div style='color:red; margin: 10px 0;'>Error processing Ayat {current_aya_idx}: {str(e)}</div>"
+                logger.error(f"Error processing Ayat {current_aya_idx}: {e}", exc_info=True)
+                html_output += f"<div style='margin: 10px 0;'>{create_error_response(f'Gagal Memproses Ayat {current_aya_idx}', details=str(e), error_type='error')}</div>"
         
         return html_output
 
+    except ValidationError as e:
+        return log_and_return_error(
+            e,
+            "Validasi Gagal",
+            suggestion="Periksa kembali pilihan surah dan rentang ayat",
+            log_level="warning"
+        )
+    
+    except AudioProcessingError as e:
+        return log_and_return_error(
+            e,
+            "Gagal Memproses Audio",
+            suggestion="Pastikan file audio valid dan tidak corrupt"
+        )
+    
+    except SegmentationError as e:
+        return log_and_return_error(
+            e,
+            "Gagal Melakukan Segmentasi",
+            suggestion="Pastikan audio memiliki jeda yang jelas antar ayat. Coba rekam ulang dengan jeda yang lebih jelas di akhir setiap ayat"
+        )
+    
+    except ModelInferenceError as e:
+        return log_and_return_error(
+            e,
+            "Gagal Memuat atau Menjalankan Model",
+            suggestion="Model mungkin belum ter-download lengkap. Coba restart aplikasi atau periksa koneksi internet"
+        )
+    
     except Exception as e:
-        return f"Gagal memproses audio: {str(e)}"
+        return log_and_return_error(
+            e,
+            "Terjadi Kesalahan Tidak Terduga",
+            suggestion="Silakan coba lagi atau laporkan masalah ini"
+        )
 
 
 def update_moshaf_settings(*args):
-    """Update the global moshaf settings with values from the settings page"""
-    global current_moshaf, field_names
-
+    """Update the moshaf settings with values from the settings page.
+    
+    Returns:
+        Tuple of (new_moshaf, status_message)
+    """
     try:
         # Create a dictionary from the field names and values
         settings_dict = dict(zip(field_names, args))
 
         # Create a new MoshafAttributes object with the updated values
-        current_moshaf = MoshafAttributes(**settings_dict)
-        return "✅ Pengaturan berhasil disimpan - Settings saved successfully!"
+        new_moshaf = MoshafAttributes(**settings_dict)
+        return new_moshaf, "✅ Pengaturan berhasil disimpan - Settings saved successfully!"
     except Exception as e:
-        return f"❌ Kesalahan saat menyimpan pengaturan - Error saving settings: {str(e)}"
+        return default_moshaf, f"❌ Kesalahan saat menyimpan pengaturan - Error saving settings: {str(e)}"
 
 
 def reset_settings():
-    """Reset all settings to default values"""
-    global current_moshaf
-
+    """Reset all settings to default values.
+    
+    Returns:
+        Tuple of (default_moshaf, field_values..., status_message)
+    """
     try:
-        current_moshaf = default_moshaf
         # Return default values for all fields
         default_values = [
             getattr(default_moshaf, field_name) for field_name in field_names
         ]
-        return default_values + [
+        return (
+            default_moshaf,
+            *default_values,
             "✅ Berhasil mengembalikan ke pengaturan awal - Reset to default settings successfully!"
-        ]
+        )
     except Exception as e:
-        return [getattr(current_moshaf, field_name) for field_name in field_names] + [
+        current_values = [getattr(default_moshaf, field_name) for field_name in field_names]
+        return (
+            default_moshaf,
+            *current_values,
             f"❌ Error resetting settings: {str(e)}"
-        ]
+        )
+
 
 
 def update_multi_verse_uthmani_preview(sura_idx, start_aya, end_aya, full_sura_toggle):
@@ -927,6 +1091,7 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
                 mv_end_aya,
                 mv_full_sura_toggle,
                 mv_preprocess_checkbox,
+                current_moshaf_state,  # Pass moshaf state
             ],
             outputs=[mv_output_html],
         )
@@ -957,12 +1122,16 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
 
         # Save settings event
         save_btn.click(
-            update_moshaf_settings, inputs=settings_components, outputs=status_message
+            update_moshaf_settings, 
+            inputs=settings_components, 
+            outputs=[current_moshaf_state, status_message]  # Update state and show message
         )
 
         # Reset to default event
         reset_btn.click(
-            reset_settings, inputs=[], outputs=settings_components + [status_message]
+            reset_settings, 
+            inputs=[], 
+            outputs=[current_moshaf_state] + settings_components + [status_message]  # Update state, fields, and message
         )
 
     with gr.Tab("Tentang & Credit"):

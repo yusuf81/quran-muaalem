@@ -1,4 +1,6 @@
-# build source
+# build artifacts
+build/
+dist/
 **/*.egg-info/
 
 # pypdl logs
