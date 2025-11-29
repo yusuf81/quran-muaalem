@@ -812,129 +812,15 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
     # Initialize field names list
     field_names = []
 
-    with gr.Tab("Analisis Utama - Analisis Bacaan"):
-        gr.Markdown("# Deteksi Kesalahan Bacaan, Tajwid, dan Sifat Huruf")
-        gr.Markdown("Pilih bagian Al-Quran yang ingin Anda pelajari")
+    # Create sura dropdown with both index and name (used in main tab)
+    sura_choices = [
+        (f"{idx} - {sura_idx_to_name[idx]}", idx) for idx in range(1, 115)
+    ]
 
-        with gr.Row():
-            with gr.Column(scale=1):
-                # Create sura dropdown with both index and name
-                sura_choices = [
-                    (f"{idx} - {sura_idx_to_name[idx]}", idx) for idx in range(1, 115)
-                ]
-                sura_dropdown = gr.Dropdown(
-                    choices=sura_choices,
-                    label="Surah",
-                    value=1,
-                    elem_id="sura_dropdown",
-                )
-
-                aya_dropdown = gr.Dropdown(
-                    choices=list(range(1, sura_to_aya_count[1] + 1)),
-                    label="Nomor Ayat",
-                    value=1,
-                    elem_id="aya_dropdown",
-                )
-                uthmani_text = gr.Textbox(
-                    label="Tulisan Utsmani",
-                    interactive=False,
-                    elem_id="uthmani_text",
-                )
-                
-                preprocess_checkbox = gr.Checkbox(
-                    label="Aktifkan pemrosesan audio (trim keheningan)",
-                    value=False,
-                )
-                debug_checkbox = gr.Checkbox(
-                    label="Tampilkan debug waveform",
-                    value=False,
-                )
-                
-            with gr.Column(scale=2):
-                uthmani_display = gr.HTML(
-                    label="Teks Rujukan (tampilan besar)",
-                    elem_id="uthmani_display",
-                )
-                audio_input = gr.Audio(
-                    sources=["upload", "microphone"],
-                    label="Unggah atau Rekam Audio",
-                    type="filepath",
-                    elem_id="audio_input",
-                )
-                analyze_btn = gr.Button(
-                    "Periksa Bacaan", variant="primary", elem_id="analyze_btn"
-                )
-
-                debug_waveform = gr.Plot(label="Waveform Debug (sebelum/sesudah pemrosesan)", visible=False)
-                output_html = gr.HTML(
-                    label="Hasil Pemeriksaan Bacaan",
-                    elem_id="output_html",
-                )
-
-        # Initial update of uthmani text
-        app.load(
-            update_uthmani_ref,
-            inputs=[sura_dropdown, aya_dropdown],
-            outputs=uthmani_text,
-        )
-        app.load(
-            update_uthmani_ref_html,
-            inputs=[sura_dropdown, aya_dropdown],
-            outputs=uthmani_display,
-        )
-
-        # Update aya dropdown when sura changes and reset aya_idx to 1
-        sura_dropdown.change(
-            update_aya_dropdown, inputs=sura_dropdown, outputs=aya_dropdown
-        ).then(
-            update_uthmani_ref,
-            inputs=[sura_dropdown, aya_dropdown],
-            outputs=uthmani_text,
-        ).then(
-            update_uthmani_ref_html,
-            inputs=[sura_dropdown, aya_dropdown],
-            outputs=uthmani_display,
-        )
-
-        # Update uthmani text when any parameter changes
-        for component in [aya_dropdown]:
-            component.change(
-                update_uthmani_ref,
-                inputs=[sura_dropdown, aya_dropdown],
-                outputs=uthmani_text,
-            ).then(
-                update_uthmani_ref_html,
-                inputs=[sura_dropdown, aya_dropdown],
-                outputs=uthmani_display,
-            )
-
-        # Show/hide debug waveform based on checkbox
-        debug_checkbox.change(
-            lambda checked: gr.update(visible=checked),
-            inputs=[debug_checkbox],
-            outputs=[debug_waveform],
-        )
-
-        # Process audio when button is clicked
-        analyze_btn.click(
-            process_audio,
-            inputs=[
-                audio_input,
-                sura_dropdown,
-                aya_dropdown,
-                preprocess_checkbox,
-                debug_checkbox,
-            ],
-            outputs=[
-                debug_waveform,
-                output_html,
-            ],
-        )
-
-    with gr.Tab("Analisis Banyak Ayat / Full Surah"):
-        gr.Markdown("# Analisis Banyak Ayat / Full Surah")
+    with gr.Tab("Analisis Bacaan"):
+        gr.Markdown("# Analisis Bacaan Al-Quran")
         gr.Markdown(
-            "Analisis bacaan untuk beberapa ayat sekaligus atau satu surat penuh. Pastikan Anda berhenti sejenak (waqf) di setiap akhir ayat agar sistem dapat memisahkan ayat dengan benar."
+            "Analisis bacaan untuk satu ayat atau beberapa ayat sekaligus. Pastikan Anda berhenti sejenak (waqf) di setiap akhir ayat agar sistem dapat memisahkan ayat dengan benar."
         )
 
         with gr.Row():
