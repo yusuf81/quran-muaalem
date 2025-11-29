@@ -1023,6 +1023,41 @@ with gr.Blocks(title="Pengajar Al-Quran") as app:
         Detection and Correction of the Holy Quran's Learners Using Deep Learning. 
         arXiv preprint arXiv:2509.00094. https://doi.org/10.48550/arXiv.2509.00094
         ```
+
+        
+        ---
+        
+        ## 🔧 Modifications in This Version / Modifikasi dalam Versi Ini
+        
+        Aplikasi ini merupakan modifikasi dari repository asli dengan penambahan fitur-fitur berikut:
+        
+        *This application is a modified version of the original repository with the following additional features:*
+        
+        ### 1. 🌏 Indonesian Translation / Translasi Bahasa Indonesia
+        - Interface bilingual (Indonesia & English) untuk kemudahan pengguna lokal
+        - Bilingual interface (Indonesian & English) for local users' convenience
+        
+        ### 2. 📖 Automatic Verse Segmentation / Pemenggalan Ayat Otomatis
+        - **Fitur analisis banyak ayat sekaligus** menggunakan model segmentation (`recitation-segmenter-v2`)
+        - Otomatis memisahkan rekaman panjang menjadi ayat-per-ayat berdasarkan jeda (waqf)
+        - Mendukung analisis full surah
+        - **Multi-verse analysis feature** using segmentation model (`recitation-segmenter-v2`)
+        - Automatically segments long recordings into individual verses based on pauses (waqf)
+        - Supports full surah analysis
+        
+        ### 3. 🔇 Audio Preprocessing / Pengolahan Audio
+        - Setiap segmen ayat dipotong dengan **padding 0.5 detik** di awal dan akhir untuk menjaga konteks
+        - **Silence trimming** opsional dilakukan SETELAH pemenggalan untuk membersihkan keheningan
+        - Each verse segment is sliced with **0.5-second padding** at the beginning and end to preserve context
+        - Optional **silence trimming** is applied AFTER segmentation to remove silence
+        
+        ### 4. 📊 Enhanced UI / Peningkatan Antarmuka
+        - Preview teks Al-Quran sebelum analisis
+        - Hasil analisis per-ayat dengan timestamp
+        - Quran text preview before analysis
+        - Per-verse analysis results with timestamps
+        
+        **Modified by:** Yusuf (GitHub: [yusuf81](https://github.com/yusuf81))
         
         ---
         
